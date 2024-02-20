@@ -9,12 +9,47 @@ app.get("/mainpage", (req, res) => {
     res.sendFile(`${__dirname}/main.html`)
 });
 
+function checkValidity(req, res, next) {
+    var regexId = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,12}$/; //영어+숫자, 각 최소 1개 이상 8~12
+    var regexPw = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,16}$/; //영어+숫자, 각 최소 1개 이상 8~16
+    var regexName = /^[가-힣]{2,10}$/ //한글만 2~10;
+    var regexPhoneNum = /^010-\d{4}-\d{4}$/;
+
+    if (req.body.id) {
+        if (!regexId.test(req.body.id)) {
+            alert('아이디를 다시 입력해주세요.');
+            res.send("실패");
+        }
+    }
+    if (req.body.pw) {
+        if (!regexPw.test(req.body.pw)) {
+            alert('비밀번호를 다시 입력해주세요.');
+            res.send("실패");
+        }
+    }
+    if (req.body.name) {
+        if (!regexName.test(req.body.name)) {
+            alert('이름을 다시 입력해주세요.');
+            res.send("실패");
+        }
+    }
+    if (req.body.phoneNum) {
+        if (!regexPhoneNum.test(req.body.phoneNum)) {
+            alert('전화번호를 다시 입력해주세요.');
+            res.send("실패");
+        }
+    }
+    next();
+}
+
 //로그인
 app.post("/login", (req, res) => {
     const { id, pw } = req.body;
     const result = {
         "success": false
-    }
+    };
+
+
 
     if (id === "suin" && pw === "suin") {
         result.success = true;
@@ -73,6 +108,7 @@ app.post("/users-password", (req, res) => {
     res.send(result);
 });
 
+//내 정보 보기
 app.get("/users/:idx", (req, res) => {
     const idx = req.params.idx;
     const result = {};
@@ -86,6 +122,7 @@ app.get("/users/:idx", (req, res) => {
     res.send(result);
 });
 
+//내 정보 수정
 app.put("/users/:idx", (req, res) => {
     const idx = req.params.idx;
     const { id, pw, name, phoneNum } = req.body;
@@ -99,7 +136,9 @@ app.put("/users/:idx", (req, res) => {
     res.send(result);
 })
 
-app.get("/post", (req, res) => {
+//게시글 읽기
+app.get("/post/:idx", (req, res) => {
+    const idx = req.params.idx;
     const result = {};
 
     //db에서 가지고 온 내용들 result에 push
@@ -107,6 +146,7 @@ app.get("/post", (req, res) => {
     res.send(result);
 })
 
+//게시글 작성
 app.post("/post", (req, res) => {
     const { title, contents } = req.body;
     //예외처리
@@ -115,6 +155,7 @@ app.post("/post", (req, res) => {
     res.sendFile(`${__dirname}/main.html`);
 })
 
+//게시글 수정
 app.put("/post/:idx", (req, res) => {
     const idx = req.params.idx;
     const { title, contents } = req.body;
@@ -125,6 +166,7 @@ app.put("/post/:idx", (req, res) => {
     res.sendFile(`${__dirname}/main.html`);
 })
 
+//게시글 삭제
 app.delete("/post/:idx", (req, res) => {
     const idx = req.params.idx;
 
@@ -132,6 +174,7 @@ app.delete("/post/:idx", (req, res) => {
     res.sendFile(`${__dirname}/main.html`);
 })
 
+//댓글 작성
 app.post("/comment", (req, res) => {
     const { contents } = req.body;
     //예외처리
@@ -140,6 +183,7 @@ app.post("/comment", (req, res) => {
     res.sendFile(`${__dirname}/main.html`);
 })
 
+//댓글 수정
 app.put("/comment/:idx", (req, res) => {
     const idx = req.params.idx;
     const { contents } = req.body;
@@ -149,6 +193,7 @@ app.put("/comment/:idx", (req, res) => {
     res.sendFile(`${__dirname}/main.html`);
 })
 
+//댓글 삭제
 app.delete("/comment/:idx", (req, res) => {
     const idx = req.params.idx;
     //삭제
