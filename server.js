@@ -1,15 +1,41 @@
 const express = require("express");
+const bodyParser = require("body-parser");
+const session = require('express-session');
 
 const app = express();
 const port = 8000;
 
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(session({
+    secret: 'SECRET_CODE',
+    resave: false,
+    saveUninitialized: false
+}));
 
 app.get("/mainpage", (req, res) => {
+    console.log(req.session.id);
+    console.log(req.session.pw);
+    console.log(req.session.name);
     res.sendFile(`${__dirname}/main.html`)
 });
+app.get("/login", (req, res) => {
+    res.sendFile(`${__dirname}/login.html`)
+});
+app.get("/test", (req, res) => {
+    if (req.session.pw) {
+        res.sendFile(`${__dirname}/test.html`);
+        return;
+    } else {
+        res.sendFile(`${__dirname}/test1.html`);
+        return;
+    }
+});
+app.get("/test1", (req, res) => {
+    res.sendFile(`${__dirname}/test1.html`)
+});
 
-function checkValidity(req, res, next) {
+const checkValidity = (req, res, next) => {
     var regexId = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,12}$/; //영어+숫자, 각 최소 1개 이상 8~12
     var regexPw = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,16}$/; //영어+숫자, 각 최소 1개 이상 8~16
     var regexName = /^[가-힣]{2,10}$/ //한글만 2~10;
@@ -17,64 +43,52 @@ function checkValidity(req, res, next) {
 
     if (req.body.id) {
         if (!regexId.test(req.body.id)) {
-            alert('아이디를 다시 입력해주세요.');
-            res.send("실패");
+            res.send("<script>alert('아이디를 다시 입력해주세요.');location.href='/login';</script>");
         }
     }
     if (req.body.pw) {
         if (!regexPw.test(req.body.pw)) {
-            alert('비밀번호를 다시 입력해주세요.');
-            res.send("실패");
+            res.send("<script>alert('비밀번호를 다시 입력해주세요.');location.href='/login';</script>");
         }
     }
     if (req.body.name) {
         if (!regexName.test(req.body.name)) {
-            alert('이름을 다시 입력해주세요.');
-            res.send("실패");
+            res.send("<script>alert('이름을 다시 입력해주세요.');location.href='/login';</script>");
         }
     }
     if (req.body.phoneNum) {
         if (!regexPhoneNum.test(req.body.phoneNum)) {
-            alert('전화번호를 다시 입력해주세요.');
-            res.send("실패");
+            res.send("<script>alert('전화번호를 다시 입력해주세요.');location.href='/login';</script>");
         }
     }
     next();
 }
 
 //로그인
-app.post("/login", (req, res) => {
+app.post("/login", checkValidity, (req, res) => {
     const { id, pw } = req.body;
-    const result = {
-        "success": false
-    };
+    console.log(id, pw)
 
-
-
-    if (id === "suin" && pw === "suin") {
-        result.success = true;
+    if (id === "qwerqwer1" && pw === "qwerqwer1!") {
+        req.session.id = id;
+        req.session.pw = pw;
+        res.redirect('/mainpage');
+    } else {
+        res.sendFile(`${__dirname}/test1.html`);
     }
 
-    res.send(result);
 });
 
 //회원가입
-app.post("/signUp", (req, res) => {
-    const { id, pw, name, phoneNum } = req.body;
-    const result = {
-        "success": false
-    }
-
-    //정규식
-    //db에 입력
-
-    res.send(result);
+app.post("/signUp", checkValidity, (req, res) => {
+    //db 에 저장
+    res.sendFile(`${__dirname}/main.html`);
 });
 
 //로그아웃
 app.get("/logout", (req, res) => {
-    //세션 삭제
-    res.sendFile(`${__dirname}/main.html`)
+    req.session.destroy();
+    res.redirect('/mainpage');
 });
 
 //회원탈퇴 //DELETE users는?
@@ -85,13 +99,20 @@ app.delete("/users/:idx", (req, res) => {
 });
 
 //아이디 찾기
-app.get("/users-id", (req, res) => {
+app.get("/users-id", checkValidity, (req, res) => {
     const { name, phoneNum } = req.body;
     const result = {};
 
     if (name === "이수인" && phoneNum === "01012345678") {
         result.id = "suin"
     }
+
+    res.send(result);
+});
+
+app.get("/users-id/:idx", (req, res) => {
+    const idx = req.params.idx;
+    const result = {};
 
     res.send(result);
 });
@@ -108,6 +129,13 @@ app.post("/users-password", (req, res) => {
     res.send(result);
 });
 
+app.get("/users-password/:idx", (req, res) => {
+    const idx = req.params.idx;
+    const result = {};
+
+    res.send(result);
+})
+
 //내 정보 보기
 app.get("/users/:idx", (req, res) => {
     const idx = req.params.idx;
@@ -123,7 +151,7 @@ app.get("/users/:idx", (req, res) => {
 });
 
 //내 정보 수정
-app.put("/users/:idx", (req, res) => {
+app.put("/users/:idx", checkValidity, (req, res) => {
     const idx = req.params.idx;
     const { id, pw, name, phoneNum } = req.body;
     const result = {};
@@ -133,6 +161,7 @@ app.put("/users/:idx", (req, res) => {
     result.name = "이수인";
     result.phoneNum = "01012345678";
 
+    //db에 넣기
     res.send(result);
 })
 
