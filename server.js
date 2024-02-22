@@ -14,21 +14,18 @@ app.use(session({
 }));
 
 app.get("/mainpage", (req, res) => {
-    console.log(req.session.id);
-    console.log(req.session.pw);
-    console.log(req.session.name);
+    console.log(req.session.userId);
+    console.log(req.session.userPw);
     res.sendFile(`${__dirname}/main.html`)
 });
 app.get("/login", (req, res) => {
     res.sendFile(`${__dirname}/login.html`)
 });
 app.get("/test", (req, res) => {
-    if (req.session.pw) {
+    if (req.session.userId) {
         res.sendFile(`${__dirname}/test.html`);
-        return;
     } else {
         res.sendFile(`${__dirname}/test1.html`);
-        return;
     }
 });
 app.get("/test1", (req, res) => {
@@ -41,23 +38,23 @@ const checkValidity = (req, res, next) => {
     var regexName = /^[가-힣]{2,10}$/ //한글만 2~10;
     var regexPhoneNum = /^010-\d{4}-\d{4}$/;
 
-    if (req.body.id) {
-        if (!regexId.test(req.body.id)) {
+    if (req.body.userId) {
+        if (!regexId.test(req.body.userId)) {
             res.send("<script>alert('아이디를 다시 입력해주세요.');location.href='/login';</script>");
         }
     }
-    if (req.body.pw) {
-        if (!regexPw.test(req.body.pw)) {
+    if (req.body.userPw) {
+        if (!regexPw.test(req.body.userPw)) {
             res.send("<script>alert('비밀번호를 다시 입력해주세요.');location.href='/login';</script>");
         }
     }
-    if (req.body.name) {
-        if (!regexName.test(req.body.name)) {
+    if (req.body.userName) {
+        if (!regexName.test(req.body.userName)) {
             res.send("<script>alert('이름을 다시 입력해주세요.');location.href='/login';</script>");
         }
     }
-    if (req.body.phoneNum) {
-        if (!regexPhoneNum.test(req.body.phoneNum)) {
+    if (req.body.userPhoneNum) {
+        if (!regexPhoneNum.test(req.body.userPhoneNum)) {
             res.send("<script>alert('전화번호를 다시 입력해주세요.');location.href='/login';</script>");
         }
     }
@@ -66,12 +63,12 @@ const checkValidity = (req, res, next) => {
 
 //로그인
 app.post("/login", checkValidity, (req, res) => {
-    const { id, pw } = req.body;
-    console.log(id, pw)
+    const { userId, userPw } = req.body;
+    console.log(userId, userPw)
 
-    if (id === "qwerqwer1" && pw === "qwerqwer1!") {
-        req.session.id = id;
-        req.session.pw = pw;
+    if (userId === "qwerqwer1" && userPw === "qwerqwer1!") {
+        req.session.userId = userId;
+        req.session.userPw = userPw;
         res.redirect('/mainpage');
     } else {
         res.sendFile(`${__dirname}/test1.html`);
