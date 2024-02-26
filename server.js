@@ -31,28 +31,30 @@ app.get("/test1", (req, res) => {
 });
 
 const checkValidity = (req, res, next) => {
-    var regexId = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,12}$/; //영어+숫자, 각 최소 1개 이상 8~12
-    var regexPw = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,16}$/; //영어+숫자, 각 최소 1개 이상 8~16
-    var regexName = /^[가-힣]{2,10}$/ //한글만 2~10;
-    var regexPhoneNum = /^010-\d{4}-\d{4}$/;
+    const regexId = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,12}$/; //영어+숫자, 각 최소 1개 이상 8~12
+    const regexPw = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,16}$/; //영어+숫자, 각 최소 1개 이상 8~16
+    const regexName = /^[가-힣]{2,10}$/ //한글만 2~10;
+    const regexPhoneNum = /^010-\d{4}-\d{4}$/;
 
-    if (req.body.userId) {
-        if (!regexId.test(req.body.userId)) {
+    const { userId, userPw, userName, userPhoneNum } = req.body;
+
+    if (userId) {
+        if (!regexId.test(userId)) {
             res.send("<script>alert('아이디를 다시 입력해주세요.');location.href='/login';</script>");
         }
     }
-    if (req.body.userPw) {
-        if (!regexPw.test(req.body.userPw)) {
+    if (userPw) {
+        if (!regexPw.test(userPw)) {
             res.send("<script>alert('비밀번호를 다시 입력해주세요.');location.href='/login';</script>");
         }
     }
-    if (req.body.userName) {
-        if (!regexName.test(req.body.userName)) {
+    if (userName) {
+        if (!regexName.test(userName)) {
             res.send("<script>alert('이름을 다시 입력해주세요.');location.href='/login';</script>");
         }
     }
-    if (req.body.userPhoneNum) {
-        if (!regexPhoneNum.test(req.body.userPhoneNum)) {
+    if (userPhoneNum) {
+        if (!regexPhoneNum.test(userPhoneNum)) {
             res.send("<script>alert('전화번호를 다시 입력해주세요.');location.href='/login';</script>");
         }
     }
@@ -73,6 +75,7 @@ app.post("/login", checkValidity, (req, res) => {
 
 //회원가입
 app.post("/signUp", checkValidity, (req, res) => {
+    const { userId, userPw } = req.body;
     //db 에 저장
     res.redirect('/mainpage');
 });
@@ -87,7 +90,7 @@ app.get("/logout", (req, res) => {
     }
 });
 
-//회원탈퇴 //DELETE users는?
+//회원탈퇴
 app.delete("/users/:idx", (req, res) => {
     const idx = req.params.idx;
 
@@ -131,7 +134,7 @@ app.post("/users-password", (req, res) => {
 });
 
 //비밀번호 찾기 결과
-app.get("/users-password/:idx", (req, res) => {
+app.post("/users-password/:idx", (req, res) => {
     const idx = req.params.idx;
 
     res.send(true);
@@ -166,7 +169,6 @@ app.put("/users/:idx", checkValidity, (req, res) => {
     } else {
         res.redirect('/test1');
     }
-
 })
 
 //게시글 읽기
@@ -195,7 +197,7 @@ app.post("/post", (req, res) => {
 //게시글 수정
 app.put("/post/:idx", (req, res) => {
     const idx = req.params.idx;
-
+    //db에서 값 부르기
     if (req.session.idx === idx) {
         const { title, contents } = req.body;
 
@@ -210,7 +212,7 @@ app.put("/post/:idx", (req, res) => {
 //게시글 삭제
 app.delete("/post/:idx", (req, res) => {
     const idx = req.params.idx;
-
+    //db에서 값 부르기
     if (req.session.idx === idx) {
         //삭제
         res.redirect('/mainpage');
@@ -234,7 +236,7 @@ app.post("/comment", (req, res) => {
 //댓글 수정
 app.put("/comment/:idx", (req, res) => {
     const idx = req.params.idx;
-
+    //db에서 값 부르기
     if (req.session.idx === idx) {
         const { contents } = req.body;
 
@@ -248,7 +250,7 @@ app.put("/comment/:idx", (req, res) => {
 //댓글 삭제
 app.delete("/comment/:idx", (req, res) => {
     const idx = req.params.idx;
-
+    //db에서 값 부르기
     if (req.session.idx === idx) {
         //삭제
         res.redirect('/mainpage');
