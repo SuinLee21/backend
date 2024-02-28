@@ -11,6 +11,7 @@ app.use(session({
     secret: 'SECRET_CODE',
     resave: false,
     saveUninitialized: false
+    //time 걸기.
 }));
 
 app.get("/mainpage", (req, res) => {
@@ -74,7 +75,7 @@ app.post("/login", checkValidity, (req, res) => {
 });
 
 //회원가입
-app.post("/signUp", checkValidity, (req, res) => {
+app.post("/signup", checkValidity, (req, res) => {
     const { userId, userPw } = req.body;
     //db 에 저장
     res.redirect('/mainpage');
@@ -93,7 +94,7 @@ app.get("/logout", (req, res) => {
 //회원탈퇴
 app.delete("/users/:idx", (req, res) => {
     const idx = req.params.idx;
-
+    //get 이랑 delete는 req로 받을 수 없음.
     if (req.session.idx === idx) {
         //db에서 데이터 삭제
         res.redirect('/login');
@@ -102,7 +103,7 @@ app.delete("/users/:idx", (req, res) => {
     }
 });
 
-//아이디 찾기
+//아이디 찾기 // 수정
 app.get("/users-id", checkValidity, (req, res) => {
     const { userName, userPhoneNum } = req.body;
     const result = {};
@@ -114,12 +115,12 @@ app.get("/users-id", checkValidity, (req, res) => {
     res.send(result);
 });
 
-//아이디 찾기 결과
-app.get("/users-id/:idx", (req, res) => {
-    const idx = req.params.idx;
+// //아이디 찾기 결과
+// app.get("/users-id/:idx", (req, res) => {
+//     const idx = req.params.idx;
 
-    res.send(true);
-});
+//     res.send(true);
+// });
 
 //비밀번호 찾기 //
 app.post("/users-password", (req, res) => {
@@ -133,12 +134,12 @@ app.post("/users-password", (req, res) => {
     res.send(result);
 });
 
-//비밀번호 찾기 결과
-app.post("/users-password/:idx", (req, res) => {
-    const idx = req.params.idx;
+// //비밀번호 찾기 결과
+// app.post("/users-password/:idx", (req, res) => {
+//     const idx = req.params.idx;
 
-    res.send(true);
-})
+//     res.send(true);
+// })
 
 //내 정보 보기
 app.get("/users/:idx", (req, res) => {
@@ -171,8 +172,10 @@ app.put("/users/:idx", checkValidity, (req, res) => {
     }
 })
 
+//게시글 전체 불러오기
+
 //게시글 읽기
-app.get("/post/:idx", (req, res) => {
+app.get("/posts/:idx", (req, res) => {
     const idx = req.params.idx;
     const result = {};
 
@@ -182,7 +185,7 @@ app.get("/post/:idx", (req, res) => {
 })
 
 //게시글 작성
-app.post("/post", (req, res) => {
+app.post("/posts", (req, res) => {
     if (req.session.idx) {
         const { title, contents } = req.body;
 
@@ -195,7 +198,7 @@ app.post("/post", (req, res) => {
 })
 
 //게시글 수정
-app.put("/post/:idx", (req, res) => {
+app.put("/posts/:idx", (req, res) => {
     const idx = req.params.idx;
     //db에서 값 부르기
     if (req.session.idx === idx) {
@@ -210,7 +213,7 @@ app.put("/post/:idx", (req, res) => {
 })
 
 //게시글 삭제
-app.delete("/post/:idx", (req, res) => {
+app.delete("/posts/:idx", (req, res) => {
     const idx = req.params.idx;
     //db에서 값 부르기
     if (req.session.idx === idx) {
@@ -221,8 +224,10 @@ app.delete("/post/:idx", (req, res) => {
     }
 })
 
+//댓글 부르기
+
 //댓글 작성
-app.post("/comment", (req, res) => {
+app.post("/comments", (req, res) => {
     if (req.session.idx) {
         const { contents } = req.body;
         //db에 추가
@@ -234,7 +239,7 @@ app.post("/comment", (req, res) => {
 })
 
 //댓글 수정
-app.put("/comment/:idx", (req, res) => {
+app.put("/comments/:idx", (req, res) => {
     const idx = req.params.idx;
     //db에서 값 부르기
     if (req.session.idx === idx) {
@@ -248,7 +253,7 @@ app.put("/comment/:idx", (req, res) => {
 })
 
 //댓글 삭제
-app.delete("/comment/:idx", (req, res) => {
+app.delete("/comments/:idx", (req, res) => {
     const idx = req.params.idx;
     //db에서 값 부르기
     if (req.session.idx === idx) {
