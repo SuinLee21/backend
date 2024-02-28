@@ -2,6 +2,10 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const session = require('express-session');
 
+const usersApi = require("./src/routes/users");
+const postsApi = require("./src/routes/posts");
+const commentsApi = require("./src/routes/comments");
+
 const app = express();
 const port = 8000;
 
@@ -14,22 +18,9 @@ app.use(session({
     //time 걸기.
 }));
 
-app.get("/mainpage", (req, res) => {
-    res.sendFile(`${__dirname}/main.html`)
-});
-app.get("/login", (req, res) => {
-    res.sendFile(`${__dirname}/login.html`)
-});
-app.get("/test", (req, res) => {
-    if (req.session.idx) {
-        res.sendFile(`${__dirname}/test.html`);
-    } else {
-        res.sendFile(`${__dirname}/test1.html`);
-    }
-});
-app.get("/test1", (req, res) => {
-    res.sendFile(`${__dirname}/test1.html`)
-});
+app.use("/users", usersApi);
+app.use("/posts", postsApi);
+app.use("/comments", commentsApi);
 
 const checkValidity = (req, res, next) => {
     const regexId = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,12}$/; //영어+숫자, 각 최소 1개 이상 8~12
@@ -91,20 +82,8 @@ app.get("/logout", (req, res) => {
     }
 });
 
-//회원탈퇴
-app.delete("/users/:idx", (req, res) => {
-    const idx = req.params.idx;
-    //get 이랑 delete는 req로 받을 수 없음.
-    if (req.session.idx === idx) {
-        //db에서 데이터 삭제
-        res.redirect('/login');
-    } else {
-        res.redirect('/test1');
-    }
-});
-
 //아이디 찾기 // 수정
-app.get("/users-id", checkValidity, (req, res) => {
+router.get("/users-id", checkValidity, (req, res) => {
     const { userName, userPhoneNum } = req.body;
     const result = {};
 
@@ -116,14 +95,14 @@ app.get("/users-id", checkValidity, (req, res) => {
 });
 
 // //아이디 찾기 결과
-// app.get("/users-id/:idx", (req, res) => {
+// router.get("/users-id/:idx", (req, res) => {
 //     const idx = req.params.idx;
 
 //     res.send(true);
 // });
 
 //비밀번호 찾기 //
-app.post("/users-password", (req, res) => {
+router.post("/users-password", (req, res) => {
     const { userId, userName, userPhoneNum } = req.body;
     const result = {};
 
@@ -135,134 +114,11 @@ app.post("/users-password", (req, res) => {
 });
 
 // //비밀번호 찾기 결과
-// app.post("/users-password/:idx", (req, res) => {
+// router.post("/users-password/:idx", (req, res) => {
 //     const idx = req.params.idx;
 
 //     res.send(true);
 // })
-
-//내 정보 보기
-app.get("/users/:idx", (req, res) => {
-    const idx = req.params.idx;
-    const result = {};
-
-    if (req.session.id === idx) {
-        //db에서 정보 부르기
-        result.userId = "suin";
-        result.userPw = "suin";
-        result.userName = "이수인";
-        result.userPhoneNum = "01012345678";
-
-        res.send(result);
-    } else {
-        res.redirect('/test1');
-    }
-});
-
-//내 정보 수정
-app.put("/users/:idx", checkValidity, (req, res) => {
-    const idx = req.params.idx;
-
-    if (req.session.idx === idx) {
-        const { userId, userPw, userName, userPhoneNum } = req.body;
-        //db에 넣기
-        res.redirect('/mainpage');
-    } else {
-        res.redirect('/test1');
-    }
-})
-
-//게시글 전체 불러오기
-
-//게시글 읽기
-app.get("/posts/:idx", (req, res) => {
-    const idx = req.params.idx;
-    const result = {};
-
-    //db에서 가지고 온 내용들 result에 push
-
-    res.send(result);
-})
-
-//게시글 작성
-app.post("/posts", (req, res) => {
-    if (req.session.idx) {
-        const { title, contents } = req.body;
-
-        //db에 추가
-
-        res.redirect('/mainpage');
-    } else {
-        res.redirect('/test1');
-    }
-})
-
-//게시글 수정
-app.put("/posts/:idx", (req, res) => {
-    const idx = req.params.idx;
-    //db에서 값 부르기
-    if (req.session.idx === idx) {
-        const { title, contents } = req.body;
-
-        //db에 추가
-
-        res.redirect('/mainpage');
-    } else {
-        res.redirect('/test1');
-    }
-})
-
-//게시글 삭제
-app.delete("/posts/:idx", (req, res) => {
-    const idx = req.params.idx;
-    //db에서 값 부르기
-    if (req.session.idx === idx) {
-        //삭제
-        res.redirect('/mainpage');
-    } else {
-        res.redirect('/test1');
-    }
-})
-
-//댓글 부르기
-
-//댓글 작성
-app.post("/comments", (req, res) => {
-    if (req.session.idx) {
-        const { contents } = req.body;
-        //db에 추가
-
-        res.redirect('/mainpage');
-    } else {
-        res.redirect('/test1');
-    }
-})
-
-//댓글 수정
-app.put("/comments/:idx", (req, res) => {
-    const idx = req.params.idx;
-    //db에서 값 부르기
-    if (req.session.idx === idx) {
-        const { contents } = req.body;
-
-        //db에 추가
-        res.redirect('/mainpage');
-    } else {
-        res.redirect('/test1');
-    }
-})
-
-//댓글 삭제
-app.delete("/comments/:idx", (req, res) => {
-    const idx = req.params.idx;
-    //db에서 값 부르기
-    if (req.session.idx === idx) {
-        //삭제
-        res.redirect('/mainpage');
-    } else {
-        res.redirect('/test1');
-    }
-})
 
 app.listen(port, () => {
     console.log(`${port}번에서 HTTP Web Server 실행`);
