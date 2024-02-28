@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const mariadb = require("../../database/connect/mariadb");
 
 //댓글 부르기
 

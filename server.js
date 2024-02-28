@@ -6,6 +6,9 @@ const usersApi = require("./src/routes/users");
 const postsApi = require("./src/routes/posts");
 const commentsApi = require("./src/routes/comments");
 
+const mariadb = require("./database/connect/mariadb");
+mariadb.connect();
+
 const app = express();
 const port = 8000;
 
@@ -53,6 +56,17 @@ const checkValidity = (req, res, next) => {
     next();
 }
 
+app.get("/aa", (req, res, next) => {
+    mariadb.query("SELECT * FROM user", (err, rows, fields) => {
+        if (!err) {
+            console.log(rows);
+            res.send(rows);
+        } else {
+            console.log("err : " + err);
+        }
+    })
+})
+
 //로그인
 app.post("/login", checkValidity, (req, res) => {
     const { userId, userPw } = req.body;
@@ -83,7 +97,7 @@ app.get("/logout", (req, res) => {
 });
 
 //아이디 찾기 // 수정
-router.get("/users-id", checkValidity, (req, res) => {
+app.get("/users-id", checkValidity, (req, res) => {
     const { userName, userPhoneNum } = req.body;
     const result = {};
 
@@ -95,14 +109,14 @@ router.get("/users-id", checkValidity, (req, res) => {
 });
 
 // //아이디 찾기 결과
-// router.get("/users-id/:idx", (req, res) => {
+// app.get("/users-id/:idx", (req, res) => {
 //     const idx = req.params.idx;
 
 //     res.send(true);
 // });
 
 //비밀번호 찾기 //
-router.post("/users-password", (req, res) => {
+app.post("/users-password", checkValidity, (req, res) => {
     const { userId, userName, userPhoneNum } = req.body;
     const result = {};
 
@@ -114,7 +128,7 @@ router.post("/users-password", (req, res) => {
 });
 
 // //비밀번호 찾기 결과
-// router.post("/users-password/:idx", (req, res) => {
+// app.post("/users-password/:idx", (req, res) => {
 //     const idx = req.params.idx;
 
 //     res.send(true);

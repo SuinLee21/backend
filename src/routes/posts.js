@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const mariadb = require("../../database/connect/mariadb");
 
 //게시글 전체 불러오기
 
