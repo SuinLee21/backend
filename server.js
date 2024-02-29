@@ -11,14 +11,15 @@ mariadb.connect();
 
 const app = express();
 const port = 8000;
+const maxAge = 30 * 60 * 1000;
 
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
     secret: 'SECRET_CODE',
     resave: false,
-    saveUninitialized: false
-    //time 걸기
+    saveUninitialized: false,
+    checkPeriod: maxAge
 }));
 
 app.use("/users", usersApi);
@@ -56,26 +57,36 @@ const checkValidity = (req, res, next) => {
     next();
 }
 
-app.get("/aa", (req, res, next) => {
-    mariadb.query("SELECT * FROM user", (err, rows, fields) => {
-        if (!err) {
-            console.log(rows);
-            res.send(rows);
-        } else {
-            console.log("err : " + err);
-        }
-    })
-})
-
 //로그인
 app.post("/login", checkValidity, (req, res) => {
     const { userId, userPw } = req.body;
+    const sql = "SELECT * FROM user WHERE id=? AND pw=?";
+    const params = [userId, userPw];
+    const result = {
+        "success": false,
+        "message": "",
+        "data": null
+    }
 
-    if (userId === "qwerqwer1" && userPw === "qwerqwer1!") {
-        req.session.idx = idx; //db에서 찾은 idx
-        res.redirect('/mainpage');
-    } else {
-        res.redirect('/login');
+    try {
+        mariadb.query(sql, params, (err, rows) => {
+            if (err) {
+                throw new Error(err);
+            } else {
+                // 일치 여부 확인
+                if (rows[0].id !== userId && rows[0].pw !== userPw) {
+                    throw new Error("회원 정보가 일치하지 않습니다.");
+                } else {
+                    result.success = true;
+                    result.message = "로그인 성공.";
+                    result.data = rows;
+                }
+            }
+        })
+    } catch (e) {
+        result.message = e;
+    } finally {
+        res.send(result);
     }
 });
 
@@ -108,13 +119,6 @@ app.get("/users-id", checkValidity, (req, res) => {
     res.send(result);
 });
 
-// //아이디 찾기 결과
-// app.get("/users-id/:idx", (req, res) => {
-//     const idx = req.params.idx;
-
-//     res.send(true);
-// });
-
 //비밀번호 찾기 //
 app.post("/users-password", checkValidity, (req, res) => {
     const { userId, userName, userPhoneNum } = req.body;
@@ -126,13 +130,6 @@ app.post("/users-password", checkValidity, (req, res) => {
 
     res.send(result);
 });
-
-// //비밀번호 찾기 결과
-// app.post("/users-password/:idx", (req, res) => {
-//     const idx = req.params.idx;
-
-//     res.send(true);
-// })
 
 app.listen(port, () => {
     console.log(`${port}번에서 HTTP Web Server 실행`);
