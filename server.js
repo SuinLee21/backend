@@ -18,7 +18,7 @@ app.use(session({
     secret: 'SECRET_CODE',
     resave: false,
     saveUninitialized: false
-    //time 걸기
+    //time 걸기.
 }));
 
 app.use("/users", usersApi);
