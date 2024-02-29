@@ -8,70 +8,125 @@ const checkValidity = (req, res, next) => {
     const regexPhoneNum = /^010-\d{4}-\d{4}$/;
 
     const { userId, userPw, userName, userPhoneNum } = req.body;
+    const result = {
+        "message": ""
+    };
 
     if (userId) {
         if (!regexId.test(userId)) {
-            res.send("<script>alert('아이디를 다시 입력해주세요.');location.href='/login';</script>");
+            result.message = "아이디를 다시 입력해주세요";
         }
     }
     if (userPw) {
         if (!regexPw.test(userPw)) {
-            res.send("<script>alert('비밀번호를 다시 입력해주세요.');location.href='/login';</script>");
+            result.message = "비밀번호를 다시 입력해주세요";
         }
     }
     if (userName) {
         if (!regexName.test(userName)) {
-            res.send("<script>alert('이름을 다시 입력해주세요.');location.href='/login';</script>");
+            result.message = "이름을 다시 입력해주세요";
         }
     }
     if (userPhoneNum) {
         if (!regexPhoneNum.test(userPhoneNum)) {
-            res.send("<script>alert('전화번호를 다시 입력해주세요.');location.href='/login';</script>");
+            result.message = "전화번호를 다시 입력해주세요";
         }
     }
+    res.send(result);
+
     next();
 }
 
 //회원탈퇴
 router.delete("/:idx", (req, res) => {
     const idx = req.params.idx;
+    const sql = "Delete FROM user WHERE idx=?";
+    const params = [idx];
+    const result = {
+        "success": false,
+        "message": ""
+    };
 
-    if (req.session.idx === idx) {
-        //db에서 데이터 삭제
-        res.redirect('/login');
-    } else {
-        res.redirect('/test1');
+    try {
+        if (req.session.idx !== idx) {
+            throw new Error("접근 권한이 없습니다.");
+        } else {
+            mariadb.query(sql, params, (err, rows) => {
+                if (err) {
+                    throw new Error(err);
+                } else {
+                    result.success = true;
+                    result.message = "회원탈퇴가 되었습니다.";
+                }
+            })
+        }
+    } catch (e) {
+        result.message = e;
+    } finally {
+        res.send(result);
     }
 });
 
 //내 정보 보기
 router.get("/:idx", (req, res) => {
     const idx = req.params.idx;
-    const result = {};
+    const sql = "SELECT * FROM user WHERE idx=?";
+    const params = [idx];
+    const result = {
+        "success": false,
+        "message": "",
+        "data": null
+    };
 
-    if (req.session.id === idx) {
-        //db에서 정보 부르기
-        result.userId = "suin";
-        result.userPw = "suin";
-        result.userName = "이수인";
-        result.userPhoneNum = "01012345678";
-
+    try {
+        if (req.session.idx !== idx) {
+            throw new Error("접근 권한이 없습니다.");
+        } else {
+            mariadb.query(sql, params, (err, rows) => {
+                if (err) {
+                    throw new Error(err);
+                } else {
+                    result.success = true;
+                    result.message = "정상 작동.";
+                    result.data = rows;
+                }
+            })
+        }
+    } catch (e) {
+        result.message = e;
+    } finally {
         res.send(result);
-    } else {
-        res.redirect('/test1');
     }
 });
 
 //내 정보 수정
 router.put("/:idx", checkValidity, (req, res) => {
+    const { userPw, userName, userPhoneNum } = req.body;
     const idx = req.params.idx;
+    const sql = "UPDATE user SET pw=?, name=?, phoneNum=? WHERE idx=?";
+    const params = [userPw, userName, userPhoneNum, idx];
+    const result = {
+        "success": false,
+        "message": ""
+    };
 
-    if (req.session.idx === idx) {
-        const { userId, userPw, userName, userPhoneNum } = req.body;
-        //db에 넣기
-        res.redirect('/mainpage');
-    } else {
-        res.redirect('/test1');
+    try {
+        if (req.session.idx !== idx) {
+            throw new Error("접근 권한이 없습니다.");
+        } else {
+            mariadb.query(sql, params, (err, rows) => {
+                if (err) {
+                    throw new Error(err);
+                } else {
+                    result.success = true;
+                    result.message = "내 정보가 수정되었습니다.";
+                }
+            })
+        }
+    } catch (e) {
+        result.message = e;
+    } finally {
+        res.send(result);
     }
 })
 

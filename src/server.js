@@ -33,27 +33,32 @@ const checkValidity = (req, res, next) => {
     const regexPhoneNum = /^010-\d{4}-\d{4}$/;
 
     const { userId, userPw, userName, userPhoneNum } = req.body;
+    const result = {
+        "message": ""
+    };
 
     if (userId) {
         if (!regexId.test(userId)) {
-            res.send("<script>alert('아이디를 다시 입력해주세요.');location.href='/login';</script>");
+            result.message = "아이디를 다시 입력해주세요";
         }
     }
     if (userPw) {
         if (!regexPw.test(userPw)) {
-            res.send("<script>alert('비밀번호를 다시 입력해주세요.');location.href='/login';</script>");
+            result.message = "비밀번호를 다시 입력해주세요";
         }
     }
     if (userName) {
         if (!regexName.test(userName)) {
-            res.send("<script>alert('이름을 다시 입력해주세요.');location.href='/login';</script>");
+            result.message = "이름을 다시 입력해주세요";
         }
     }
     if (userPhoneNum) {
         if (!regexPhoneNum.test(userPhoneNum)) {
-            res.send("<script>alert('전화번호를 다시 입력해주세요.');location.href='/login';</script>");
+            result.message = "전화번호를 다시 입력해주세요";
         }
     }
+    res.send(result);
+
     next();
 }
 
