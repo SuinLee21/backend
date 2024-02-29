@@ -2,11 +2,11 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const session = require('express-session');
 
-const usersApi = require("./src/routes/users");
-const postsApi = require("./src/routes/posts");
-const commentsApi = require("./src/routes/comments");
+const usersApi = require("./routes/users");
+const postsApi = require("./routes/posts");
+const commentsApi = require("./routes/comments");
 
-const mariadb = require("./database/connect/mariadb");
+const mariadb = require("../database/connect/mariadb");
 mariadb.connect();
 
 const app = express();
@@ -66,7 +66,7 @@ app.post("/login", checkValidity, (req, res) => {
         "success": false,
         "message": "",
         "data": null
-    }
+    };
 
     try {
         mariadb.query(sql, params, (err, rows) => {
@@ -74,7 +74,7 @@ app.post("/login", checkValidity, (req, res) => {
                 throw new Error(err);
             } else {
                 // 일치 여부 확인
-                if (rows[0].id !== userId && rows[0].pw !== userPw) {
+                if (rows[0].id !== userId || rows[0].pw !== userPw) {
                     throw new Error("회원 정보가 일치하지 않습니다.");
                 } else {
                     result.success = true;
@@ -92,43 +92,116 @@ app.post("/login", checkValidity, (req, res) => {
 
 //회원가입
 app.post("/signup", checkValidity, (req, res) => {
-    const { userId, userPw } = req.body;
-    //db 에 저장
-    res.redirect('/mainpage');
+    const { userId, userPw, userName, userPhoneNum } = req.body;
+    const sql = "INSERT INTO user(id, pw, name, phoneNum) VALUES(?, ?, ?, ?)";
+    const params = [userId, userPw, userName, userPhoneNum];
+    const result = {
+        "success": false,
+        "message": ""
+    };
+
+    try {
+        mariadb.query(sql, params, (err, rows) => {
+            if (err) {
+                throw new Error(err);
+            } else {
+                result.success = true;
+                result.message = "정상적으로 가입되었습니다.";
+            }
+        })
+    } catch (e) {
+        result.message = e;
+    } finally {
+        res.send(result);
+    }
 });
 
 //로그아웃
 app.get("/logout", (req, res) => {
-    if (req.session.idx) {
-        req.session.destroy();
-        res.redirect('/mainpage');
-    } else {
-        res.redirect('/test1');
+    const result = {
+        "success": false,
+        "message": ""
+    };
+
+    try {
+        if (!req.session.idx) {
+            throw new Error("접근 권한이 없습니다.");
+        } else {
+            req.session.destroy();
+            result.success = true;
+            result.message = "로그아웃 되었습니다.";
+        }
+    } catch (e) {
+        result.message = e;
+    } finally {
+        res.send(result);
     }
 });
 
 //아이디 찾기 // 수정
 app.get("/users-id", checkValidity, (req, res) => {
     const { userName, userPhoneNum } = req.body;
-    const result = {};
+    const sql = "SELECT * FROM user WHERE name=? AND phoneNum=?";
+    const params = [userId, userPw];
+    const result = {
+        "success": false,
+        "message": "",
+        "data": null
+    };
 
-    if (userName === "이수인" && userPhoneNum === "01012345678") {
-        result.userId = "suin"
+    try {
+        mariadb.query(sql, params, (err, rows) => {
+            if (err) {
+                throw new Error(err);
+            } else {
+                // 일치 여부 확인
+                if (rows[0].name !== userName || rows[0].phoneNum !== userPhoneNum) {
+                    throw new Error("회원 정보가 일치하지 않습니다.");
+                } else {
+                    result.success = true;
+                    result.message = "아이디 찾기 성공.";
+                    result.data = rows[0].id;
+                }
+            }
+        })
+    } catch (e) {
+        result.message = e;
+    } finally {
+        res.send(result);
     }
-
-    res.send(result);
 });
 
 //비밀번호 찾기 //
 app.post("/users-password", checkValidity, (req, res) => {
     const { userId, userName, userPhoneNum } = req.body;
-    const result = {};
+    const sql = "SELECT * FROM user WHERE id=? AND name=? AND phoneNum=?";
+    const params = [userId, userName, userPhoneNum];
+    const result = {
+        "success": false,
+        "message": "",
+        "data": null
+    };
 
-    if (userId === "suin" && userName === "이수인" && userPhoneNum === "01012345678") {
-        result.userPw = "suin"
+    try {
+        mariadb.query(sql, params, (err, rows) => {
+            if (err) {
+                throw new Error(err);
+            } else {
+                // 일치 여부 확인
+                if (rows[0].id !== userId || rows[0].name !== userName || rows[0].phoneNum !== userPhoneNum) {
+                    throw new Error("회원 정보가 일치하지 않습니다.");
+                } else {
+                    result.success = true;
+                    result.message = "아이디 찾기 성공.";
+                    result.data = rows[0].pw;
+                }
+            }
+        })
+    } catch (e) {
+        result.message = e;
+    } finally {
+        res.send(result);
     }
-
-    res.send(result);
 });
 
 app.listen(port, () => {
