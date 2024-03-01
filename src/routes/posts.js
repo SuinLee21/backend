@@ -1,14 +1,11 @@
 const router = require("express").Router();
 const mariadb = require("../../database/connect/mariadb");
 
-//게시글 전체 불러오기
-
-
 //게시글 읽기
-router.get("/posts/:idx", (req, res) => {
+router.get("/:idx", (req, res) => {
     const postIdx = req.params.idx;
     let sql = "SELECT * FROM post WHERE idx=?";
-    let params = [postIdx];
+    const params = [postIdx];
     const result = {
         "success": false,
         "message": "",
@@ -28,7 +25,6 @@ router.get("/posts/:idx", (req, res) => {
                     result.postData = rows;
 
                     sql = "SELECT * FROM comment WHERE post_idx=?";
-                    params = [postIdx];
 
                     mariadb.query(sql, params, (err, rows) => {
                         if (err) {
@@ -49,7 +45,7 @@ router.get("/posts/:idx", (req, res) => {
 })
 
 //게시글 작성
-router.post("/posts", (req, res) => {
+router.post("/", (req, res) => {
     const { title, contents } = req.body;
     const userIdx = req.session.idx;
     const sql = "INSERT INTO post(user_idx, title, contents) VALUES(?, ?, ?)";
@@ -80,7 +76,7 @@ router.post("/posts", (req, res) => {
 })
 
 //게시글 수정
-router.put("/posts/:idx", (req, res) => {
+router.put("/:idx", (req, res) => {
     const { userIdx, title, contents } = req.body;
     const postIdx = req.params.idx;
     const sql = "UPDATE post SET title=?, contents=? WHERE idx=?";
@@ -111,7 +107,7 @@ router.put("/posts/:idx", (req, res) => {
 })
 
 //게시글 삭제
-router.delete("/posts/:idx", (req, res) => {
+router.delete("/:idx", (req, res) => {
     const { userIdx } = req.body;
     const postIdx = req.params.idx;
     const sql = "Delete FROM post WHERE idx=?";

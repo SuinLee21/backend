@@ -15,25 +15,25 @@ const checkValidity = (req, res, next) => {
     if (userId) {
         if (!regexId.test(userId)) {
             result.message = "아이디를 다시 입력해주세요";
-            res.send(result);
+            return res.send(result);
         }
     }
     if (userPw) {
         if (!regexPw.test(userPw)) {
             result.message = "비밀번호를 다시 입력해주세요";
-            res.send(result);
+            return res.send(result);
         }
     }
     if (userName) {
         if (!regexName.test(userName)) {
             result.message = "이름을 다시 입력해주세요";
-            res.send(result);
+            return res.send(result);
         }
     }
     if (userPhoneNum) {
         if (!regexPhoneNum.test(userPhoneNum)) {
             result.message = "전화번호를 다시 입력해주세요";
-            res.send(result);
+            return res.send(result);
         }
     }
 
@@ -60,6 +60,7 @@ router.delete("/:idx", (req, res) => {
                 } else {
                     result.success = true;
                     result.message = "회원탈퇴가 되었습니다.";
+                    req.session.destroy();
                 }
             })
         }
@@ -70,7 +71,7 @@ router.delete("/:idx", (req, res) => {
     }
 });
 
-//내 정보 보기.
+//내 정보 보기
 router.get("/:idx", (req, res) => {
     const userIdx = req.params.idx;
     const sql = "SELECT * FROM user WHERE idx=?";

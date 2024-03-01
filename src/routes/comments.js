@@ -4,7 +4,7 @@ const mariadb = require("../../database/connect/mariadb");
 //댓글 부르기
 
 //댓글 작성
-router.post("/comments", (req, res) => {
+router.post("/", (req, res) => {
     const { postIdx, contents } = req.body;
     const userIdx = req.session.idx;
     const sql = "INSERT INTO comment(user_idx, post_idx, contents) VALUES(?, ?, ?)";
@@ -35,7 +35,7 @@ router.post("/comments", (req, res) => {
 })
 
 //댓글 수정
-router.put("/comments/:idx", (req, res) => {
+router.put("/:idx", (req, res) => {
     const { userIdx, contents } = req.body;
     const commentIdx = req.params.idx;
     const sql = "UPDATE comment SET contents=? WHERE idx=?";
@@ -66,7 +66,7 @@ router.put("/comments/:idx", (req, res) => {
 })
 
 //댓글 삭제
-router.delete("/comments/:idx", (req, res) => {
+router.delete("/:idx", (req, res) => {
     const { userIdx } = req.body;
     const idx = req.params.idx;
     const sql = "Delete FROM comment WHERE idx=?";
