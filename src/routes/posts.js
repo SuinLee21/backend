@@ -7,12 +7,13 @@ const mariadb = require("../../database/connect/mariadb");
 //게시글 읽기
 router.get("/posts/:idx", (req, res) => {
     const postIdx = req.params.idx;
-    const sql = "SELECT * FROM post WHERE idx=?";
-    const params = [postIdx];
+    let sql = "SELECT * FROM post WHERE idx=?";
+    let params = [postIdx];
     const result = {
         "success": false,
         "message": "",
-        "data": null
+        "postData": null,
+        "commentData": null
     };
 
     try {
@@ -23,9 +24,20 @@ router.get("/posts/:idx", (req, res) => {
                 if (err) {
                     throw new Error(err);
                 } else {
-                    result.success = true;
-                    result.message = "정상 작동.";
-                    result.data = rows;
+                    result.message = "게시글 읽기 성공";
+                    result.postData = rows;
+
+                    sql = "SELECT * FROM comment WHERE post_idx=?";
+                    params = [postIdx];
+
+                    mariadb.query(sql, params, (err, rows) => {
+                        if (err) {
+                            throw new Error(err);
+                        } else {
+                            result.message = "게시글, 댓글 읽기 성공";
+                            result.commentData = rows;
+                        }
+                    })
                 }
             })
         }

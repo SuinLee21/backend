@@ -65,6 +65,31 @@ const checkValidity = (req, res, next) => {
     next();
 }
 
+app.get('/', (req, res) => {
+    const sql = "SELECT * FROM post";
+    const result = {
+        "success": false,
+        "message": "",
+        "data": null
+    }
+
+    try {
+        mariadb.query(sql, (err, rows) => {
+            if (err) {
+                throw new Error(err);
+            } else {
+                result.success = true;
+                result.message = "정상 작동.";
+                result.data = rows;
+            }
+        })
+    } catch (e) {
+        result.message = e;
+    } finally {
+        res.send(result);
+    }
+})
+
 //로그인
 app.post("/login", checkValidity, (req, res) => {
     const { userId, userPw } = req.body;

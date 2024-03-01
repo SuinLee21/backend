@@ -36,7 +36,7 @@ router.post("/comments", (req, res) => {
 
 //댓글 수정
 router.put("/comments/:idx", (req, res) => {
-    const { userIdx, postIdx, contents } = req.body;
+    const { userIdx, contents } = req.body;
     const commentIdx = req.params.idx;
     const sql = "UPDATE comment SET contents=? WHERE idx=?";
     const params = [contents, commentIdx];
