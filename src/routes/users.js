@@ -67,7 +67,7 @@ router.delete("/:idx", (req, res) => {
     }
 });
 
-//내 정보 보기
+//내 정보 보기.
 router.get("/:idx", (req, res) => {
     const idx = req.params.idx;
     const sql = "SELECT * FROM user WHERE idx=?";
