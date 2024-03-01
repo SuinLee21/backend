@@ -42,16 +42,16 @@ const checkValidity = (req, res, next) => {
 
 //회원탈퇴
 router.delete("/:idx", (req, res) => {
-    const idx = req.params.idx;
+    const userIdx = req.params.idx;
     const sql = "Delete FROM user WHERE idx=?";
-    const params = [idx];
+    const params = [userIdx];
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        if (req.session.idx !== idx) {
+        if (req.session.idx !== userIdx) {
             throw new Error("접근 권한이 없습니다.");
         } else {
             mariadb.query(sql, params, (err, rows) => {
@@ -72,9 +72,9 @@ router.delete("/:idx", (req, res) => {
 
 //내 정보 보기.
 router.get("/:idx", (req, res) => {
-    const idx = req.params.idx;
+    const userIdx = req.params.idx;
     const sql = "SELECT * FROM user WHERE idx=?";
-    const params = [idx];
+    const params = [userIdx];
     const result = {
         "success": false,
         "message": "",
@@ -82,7 +82,7 @@ router.get("/:idx", (req, res) => {
     };
 
     try {
-        if (req.session.idx !== idx) {
+        if (req.session.idx !== userIdx) {
             throw new Error("접근 권한이 없습니다.");
         } else {
             mariadb.query(sql, params, (err, rows) => {
@@ -105,16 +105,16 @@ router.get("/:idx", (req, res) => {
 //내 정보 수정
 router.put("/:idx", checkValidity, (req, res) => {
     const { userPw, userName, userPhoneNum } = req.body;
-    const idx = req.params.idx;
+    const userIdx = req.params.idx;
     const sql = "UPDATE user SET pw=?, name=?, phoneNum=? WHERE idx=?";
-    const params = [userPw, userName, userPhoneNum, idx];
+    const params = [userPw, userName, userPhoneNum, userIdx];
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        if (req.session.idx !== idx) {
+        if (req.session.idx !== userIdx) {
             throw new Error("접근 권한이 없습니다.");
         } else {
             mariadb.query(sql, params, (err, rows) => {

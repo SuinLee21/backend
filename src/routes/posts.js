@@ -6,9 +6,9 @@ const mariadb = require("../../database/connect/mariadb");
 
 //게시글 읽기
 router.get("/posts/:idx", (req, res) => {
-    const idx = req.params.idx;
+    const postIdx = req.params.idx;
     const sql = "SELECT * FROM post WHERE idx=?";
-    const params = [idx];
+    const params = [postIdx];
     const result = {
         "success": false,
         "message": "",
@@ -39,16 +39,16 @@ router.get("/posts/:idx", (req, res) => {
 //게시글 작성
 router.post("/posts", (req, res) => {
     const { title, contents } = req.body;
-    const idx = req.session.idx;
+    const userIdx = req.session.idx;
     const sql = "INSERT INTO post(user_idx, title, contents) VALUES(?, ?, ?)";
-    const params = [idx, title, contents];
+    const params = [userIdx, title, contents];
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        if (!idx) {
+        if (!userIdx) {
             throw new Error("접근 권한이 없습니다.");
         } else {
             mariadb.query(sql, params, (err, rows) => {
@@ -56,7 +56,7 @@ router.post("/posts", (req, res) => {
                     throw new Error(err);
                 } else {
                     result.success = true;
-                    result.message = "정상 작동.";
+                    result.message = "게시글이 작성되었습니다.";
                 }
             })
         }
@@ -69,17 +69,17 @@ router.post("/posts", (req, res) => {
 
 //게시글 수정
 router.put("/posts/:idx", (req, res) => {
-    const { title, contents } = req.body;
-    const idx = req.params.idx;
-    const sql = "UPDATE post SET title=?, contents=? WHERE user_idx=?";
-    const params = [title, contents, idx];
+    const { userIdx, title, contents } = req.body;
+    const postIdx = req.params.idx;
+    const sql = "UPDATE post SET title=?, contents=? WHERE idx=?";
+    const params = [title, contents, postIdx];
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        if (req.session.idx !== idx) {
+        if (req.session.idx !== userIdx) {
             throw new Error("접근 권한이 없습니다.");
         } else {
             mariadb.query(sql, params, (err, rows) => {
@@ -100,16 +100,17 @@ router.put("/posts/:idx", (req, res) => {
 
 //게시글 삭제
 router.delete("/posts/:idx", (req, res) => {
-    const idx = req.params.idx;
-    const sql = "Delete FROM post WHERE user_idx=?";
-    const params = [idx];
+    const { userIdx } = req.body;
+    const postIdx = req.params.idx;
+    const sql = "Delete FROM post WHERE idx=?";
+    const params = [postIdx];
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        if (req.session.idx !== idx) {
+        if (req.session.idx !== userIdx) {
             throw new Error("접근 권한이 없습니다.");
         } else {
             mariadb.query(sql, params, (err, rows) => {
