@@ -3,6 +3,7 @@ const mariadb = require("../../database/connect/mariadb");
 
 //게시글 전체 불러오기
 
+
 //게시글 읽기
 router.get("/posts/:idx", (req, res) => {
     const idx = req.params.idx;
