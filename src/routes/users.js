@@ -15,24 +15,27 @@ const checkValidity = (req, res, next) => {
     if (userId) {
         if (!regexId.test(userId)) {
             result.message = "아이디를 다시 입력해주세요";
+            res.send(result);
         }
     }
     if (userPw) {
         if (!regexPw.test(userPw)) {
             result.message = "비밀번호를 다시 입력해주세요";
+            res.send(result);
         }
     }
     if (userName) {
         if (!regexName.test(userName)) {
             result.message = "이름을 다시 입력해주세요";
+            res.send(result);
         }
     }
     if (userPhoneNum) {
         if (!regexPhoneNum.test(userPhoneNum)) {
             result.message = "전화번호를 다시 입력해주세요";
+            res.send(result);
         }
     }
-    res.send(result);
 
     next();
 }

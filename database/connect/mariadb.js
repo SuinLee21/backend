@@ -5,7 +5,7 @@ const conn = mariadb.createConnection({
     port: 3306,
     user: 'suin',
     password: 'suin',
-    database: 'scheduler'
+    database: 'web'
 });
 
 module.exports = conn;
