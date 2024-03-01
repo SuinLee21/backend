@@ -1,46 +1,8 @@
 const router = require("express").Router();
 const mariadb = require("../../database/connect/mariadb");
+const modules = require("../module");
 
-const checkValidity = (req, res, next) => {
-    const regexId = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,12}$/; //영어+숫자, 각 최소 1개 이상 8~12
-    const regexPw = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,16}$/; //영어+숫자, 각 최소 1개 이상 8~16
-    const regexName = /^[가-힣]{2,10}$/ //한글만 2~10;
-    const regexPhoneNum = /^010-\d{4}-\d{4}$/;
-
-    const { userId, userPw, userName, userPhoneNum } = req.body;
-    const result = {
-        "message": ""
-    };
-
-    if (userId) {
-        if (!regexId.test(userId)) {
-            result.message = "아이디를 다시 입력해주세요";
-            return res.send(result);
-        }
-    }
-    if (userPw) {
-        if (!regexPw.test(userPw)) {
-            result.message = "비밀번호를 다시 입력해주세요";
-            return res.send(result);
-        }
-    }
-    if (userName) {
-        if (!regexName.test(userName)) {
-            result.message = "이름을 다시 입력해주세요";
-            return res.send(result);
-        }
-    }
-    if (userPhoneNum) {
-        if (!regexPhoneNum.test(userPhoneNum)) {
-            result.message = "전화번호를 다시 입력해주세요";
-            return res.send(result);
-        }
-    }
-
-    next();
-}
-
-app.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const sql = "SELECT * FROM post";
     const result = {
         "success": false,
@@ -49,24 +11,25 @@ app.get('/', (req, res) => {
     }
 
     try {
-        mariadb.query(sql, (err, rows) => {
-            if (err) {
-                throw new Error(err);
-            } else {
-                result.success = true;
-                result.message = "정상 작동.";
-                result.data = rows;
-            }
-        })
+        const post = await modules.query(sql);
+
+        if (!post) {
+            throw new Error('데이터를 불러오지 못 했습니다.');
+        }
+
+        result.success = true;
+        result.message = "정상적으로 데이터를 불러왔습니다.";
+        result.data = post
+        console.log(post[0]);
     } catch (e) {
-        result.message = e;
+        result.message = e.message;
     } finally {
         res.send(result);
     }
 })
 
 //로그인
-app.post("/login", checkValidity, (req, res) => {
+router.post("/login", modules.checkValidity, (req, res) => {
     const { userId, userPw } = req.body;
     const sql = "SELECT * FROM user WHERE id=? AND pw=?";
     const params = [userId, userPw];
@@ -79,26 +42,30 @@ app.post("/login", checkValidity, (req, res) => {
         mariadb.query(sql, params, (err, rows) => {
             if (err) {
                 throw new Error(err);
-            } else {
-                // 일치 여부 확인
-                if (rows[0].id !== userId || rows[0].pw !== userPw) {
-                    throw new Error("회원 정보가 일치하지 않습니다.");
-                } else {
-                    result.success = true;
-                    result.message = "로그인 성공.";
-                    req.session.idx = rows[0].idx;
-                }
             }
+            if (!rows) {
+                throw new Error("데이터를 불러오지 못 했습니다.");
+            }
+
+            // 일치 여부 확인
+            if (rows[0].id !== userId || rows[0].pw !== userPw) {
+                throw new Error("회원 정보가 일치하지 않습니다.");
+            }
+
+            result.success = true;
+            result.message = "로그인 성공.";
+            req.session.idx = rows[0].idx;
+
+            res.send(result);
         })
     } catch (e) {
-        result.message = e;
-    } finally {
+        result.message = e.message;
         res.send(result);
     }
 });
 
 //회원가입
-app.post("/signup", checkValidity, (req, res) => {
+router.post("/signup", modules.checkValidity, (req, res) => {
     const { userId, userPw, userName, userPhoneNum } = req.body;
     const sql = "INSERT INTO user(id, pw, name, phoneNum) VALUES(?, ?, ?, ?)";
     const params = [userId, userPw, userName, userPhoneNum];
@@ -111,42 +78,48 @@ app.post("/signup", checkValidity, (req, res) => {
         mariadb.query(sql, params, (err, rows) => {
             if (err) {
                 throw new Error(err);
-            } else {
-                result.success = true;
-                result.message = "정상적으로 가입되었습니다.";
             }
+
+            result.success = true;
+            result.message = "정상적으로 가입되었습니다.";
+
+            res.send(result);
         })
     } catch (e) {
-        result.message = e;
-    } finally {
+        result.message = e.message;
         res.send(result);
     }
 });
 
 //로그아웃
-app.get("/logout", (req, res) => {
+router.get("/logout", (req, res) => {
+    // req.session.idx = 1;
+    console.log(req.session.idx);
     const result = {
         "success": false,
         "message": ""
     };
+    console.log(req.session.idx);
 
     try {
         if (!req.session.idx) {
+            console.log(req.session.idx);
             throw new Error("접근 권한이 없습니다.");
-        } else {
-            req.session.destroy();
-            result.success = true;
-            result.message = "로그아웃 되었습니다.";
         }
+
+        req.session.destroy();
+        result.success = true;
+        result.message = "로그아웃 되었습니다.";
+
+        res.send(result);
     } catch (e) {
-        result.message = e;
-    } finally {
+        result.message = e.message.message;
         res.send(result);
     }
 });
 
 //아이디 찾기 // 수정
-app.get("/users-id", checkValidity, (req, res) => {
+router.get("/users-id", modules.checkValidity, (req, res) => {
     const { userName, userPhoneNum } = req.query;
     const sql = "SELECT * FROM user WHERE name=? AND phoneNum=?";
     const params = [userName, userPhoneNum];
@@ -172,14 +145,14 @@ app.get("/users-id", checkValidity, (req, res) => {
             }
         })
     } catch (e) {
-        result.message = e;
+        result.message = e.message;
     } finally {
         res.send(result);
     }
 });
 
-//비밀번호 찾기 //
-app.post("/users-password", checkValidity, (req, res) => {
+//비밀번호 찾기
+router.post("/users-password", modules.checkValidity, (req, res) => {
     const { userId, userName, userPhoneNum } = req.body;
     const sql = "SELECT * FROM user WHERE id=? AND name=? AND phoneNum=?";
     const params = [userId, userName, userPhoneNum];
@@ -205,7 +178,7 @@ app.post("/users-password", checkValidity, (req, res) => {
             }
         })
     } catch (e) {
-        result.message = e;
+        result.message = e.message;
     } finally {
         res.send(result);
     }
