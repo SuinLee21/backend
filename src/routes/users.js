@@ -3,7 +3,7 @@ const mariadb = require("../../database/connect/mariadb");
 const modules = require("../module");
 
 //회원탈퇴
-router.delete("/:idx", (req, res) => {
+router.delete("/:idx", async (req, res) => {
     const userIdx = req.params.idx;
     const sql = "Delete FROM user WHERE idx=?";
     const params = [userIdx];
@@ -15,26 +15,22 @@ router.delete("/:idx", (req, res) => {
     try {
         if (req.session.idx !== userIdx) {
             throw new Error("접근 권한이 없습니다.");
-        } else {
-            mariadb.query(sql, params, (err, rows) => {
-                if (err) {
-                    throw new Error(err);
-                } else {
-                    result.success = true;
-                    result.message = "회원탈퇴가 되었습니다.";
-                    req.session.destroy();
-                }
-            })
         }
-    } catch (e) {
-        result.message = e;
+
+        await modules.query(sql, params);
+
+        result.success = true;
+        result.message = "회원탈퇴가 되었습니다.";
+        req.session.destroy();
+    } catch (err) {
+        result.message = err.message;
     } finally {
         res.send(result);
     }
 });
 
 //내 정보 보기
-router.get("/:idx", (req, res) => {
+router.get("/:idx", async (req, res) => {
     const userIdx = req.params.idx;
     const sql = "SELECT * FROM user WHERE idx=?";
     const params = [userIdx];
@@ -47,26 +43,26 @@ router.get("/:idx", (req, res) => {
     try {
         if (req.session.idx !== userIdx) {
             throw new Error("접근 권한이 없습니다.");
-        } else {
-            mariadb.query(sql, params, (err, rows) => {
-                if (err) {
-                    throw new Error(err);
-                } else {
-                    result.success = true;
-                    result.message = "정상 작동.";
-                    result.data = rows;
-                }
-            })
         }
-    } catch (e) {
-        result.message = e;
+
+        const userData = await modules.query(sql, params);
+
+        if (userData.length === 0) {
+            throw new Error('존재하지 않는 정보입니다.');
+        }
+
+        result.success = true;
+        result.message = "정상적으로 데이터를 불러왔습니다.";
+        result.data = userData;
+    } catch (err) {
+        result.message = err.message;
     } finally {
         res.send(result);
     }
 });
 
 //내 정보 수정
-router.put("/:idx", modules.checkValidity, (req, res) => {
+router.put("/:idx", modules.checkValidity, async (req, res) => {
     const { userPw, userName, userPhoneNum } = req.body;
     const userIdx = req.params.idx;
     const sql = "UPDATE user SET pw=?, name=?, phoneNum=? WHERE idx=?";
@@ -79,18 +75,14 @@ router.put("/:idx", modules.checkValidity, (req, res) => {
     try {
         if (req.session.idx !== userIdx) {
             throw new Error("접근 권한이 없습니다.");
-        } else {
-            mariadb.query(sql, params, (err, rows) => {
-                if (err) {
-                    throw new Error(err);
-                } else {
-                    result.success = true;
-                    result.message = "내 정보가 수정되었습니다.";
-                }
-            })
         }
-    } catch (e) {
-        result.message = e;
+
+        await modules.query(sql, params);
+
+        result.success = true;
+        result.message = "내 정보가 수정되었습니다.";
+    } catch (err) {
+        result.message = err.message;
     } finally {
         res.send(result);
     }

@@ -1,10 +1,9 @@
 const router = require("express").Router();
 const mariadb = require("../../database/connect/mariadb");
-
-//댓글 부르기
+const modules = require("../module");
 
 //댓글 작성
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     const { postIdx, contents } = req.body;
     const userIdx = req.session.idx;
     const sql = "INSERT INTO comment(user_idx, post_idx, contents) VALUES(?, ?, ?)";
@@ -15,27 +14,23 @@ router.post("/", (req, res) => {
     };
 
     try {
-        if (!userIdx) {
+        if (userIdx.length === 0) {
             throw new Error("접근 권한이 없습니다.");
-        } else {
-            mariadb.query(sql, params, (err, rows) => {
-                if (err) {
-                    throw new Error(err);
-                } else {
-                    result.success = true;
-                    result.message = "댓글이 작성되었습니다.";
-                }
-            })
         }
-    } catch (e) {
-        result.message = e;
+
+        await modules.query(sql, params);
+
+        result.success = true;
+        result.message = "댓글이 작성되었습니다.";
+    } catch (err) {
+        result.message = err.message;
     } finally {
         res.send(result);
     }
 })
 
 //댓글 수정
-router.put("/:idx", (req, res) => {
+router.put("/:idx", async (req, res) => {
     const { userIdx, contents } = req.body;
     const commentIdx = req.params.idx;
     const sql = "UPDATE comment SET contents=? WHERE idx=?";
@@ -48,25 +43,21 @@ router.put("/:idx", (req, res) => {
     try {
         if (req.session.idx !== userIdx) {
             throw new Error("접근 권한이 없습니다.");
-        } else {
-            mariadb.query(sql, params, (err, rows) => {
-                if (err) {
-                    throw new Error(err);
-                } else {
-                    result.success = true;
-                    result.message = "댓글이 수정되었습니다.";
-                }
-            })
         }
-    } catch (e) {
-        result.message = e;
+
+        await modules.query(sql, params);
+
+        result.success = true;
+        result.message = "댓글이 수정되었습니다.";
+    } catch (err) {
+        result.message = err.message;
     } finally {
         res.send(result);
     }
 })
 
 //댓글 삭제
-router.delete("/:idx", (req, res) => {
+router.delete("/:idx", async (req, res) => {
     const { userIdx } = req.body;
     const idx = req.params.idx;
     const sql = "Delete FROM comment WHERE idx=?";
@@ -79,18 +70,14 @@ router.delete("/:idx", (req, res) => {
     try {
         if (req.session.idx !== userIdx) {
             throw new Error("접근 권한이 없습니다.");
-        } else {
-            mariadb.query(sql, params, (err, rows) => {
-                if (err) {
-                    throw new Error(err);
-                } else {
-                    result.success = true;
-                    result.message = "댓글이 삭제되었습니다.";
-                }
-            })
         }
-    } catch (e) {
-        result.message = e;
+
+        await modules.query(sql, params);
+
+        result.success = true;
+        result.message = "댓글이 삭제되었습니다.";
+    } catch (err) {
+        result.message = err.message;
     } finally {
         res.send(result);
     }

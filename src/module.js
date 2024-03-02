@@ -27,7 +27,8 @@ module.exports = {
         if (userId) {
             if (!regexId.test(userId)) {
                 result.message = "아이디를 다시 입력해주세요";
-                return res.send(result);
+                console.log('aa')
+                return res.status(404).send(result);
             }
         }
         if (userPw) {
@@ -48,7 +49,6 @@ module.exports = {
                 return res.send(result);
             }
         }
-
         next();
     }
 }
