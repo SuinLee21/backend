@@ -5,7 +5,7 @@ const modules = require("../module");
 //회원탈퇴
 router.delete("/:idx", async (req, res) => {
     const userIdx = req.params.idx;
-    const sql = "Delete FROM user WHERE idx=?";
+    const sql = "DELETE FROM user WHERE idx=?";
     const params = [userIdx];
     const result = {
         "success": false,
@@ -29,7 +29,7 @@ router.delete("/:idx", async (req, res) => {
     }
 });
 
-//내 정보 보기
+//특정 유저 정보 보기
 router.get("/:idx", async (req, res) => {
     const userIdx = req.params.idx;
     const sql = "SELECT * FROM user WHERE idx=?";
@@ -61,7 +61,7 @@ router.get("/:idx", async (req, res) => {
     }
 });
 
-//내 정보 수정
+//특정 유저 정보 수정
 router.put("/:idx", modules.checkValidity, async (req, res) => {
     const { userPw, userName, userPhoneNum } = req.body;
     const userIdx = req.params.idx;

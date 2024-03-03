@@ -1,5 +1,4 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const session = require('express-session');
 
 const usersApi = require("./routes/users");
@@ -10,12 +9,19 @@ const utillsApi = require("./routes/utills");
 const mariadb = require("../database/connect/mariadb");
 mariadb.connect();
 
+require('dotenv').config();
+// const pg = require("../database/connect/postgre");
+// pg.connect(err => {
+//     if (err) {
+//         console.log(err);
+//     }
+// })
+
 const app = express();
-const port = 8000;
+const port = process.env.HTTP_PORT;
 const maxAge = 30 * 60 * 1000;
 
 app.use(express.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
     secret: 'SECRET_CODE',
     resave: false,

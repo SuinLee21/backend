@@ -24,7 +24,7 @@ app.post("/login", (req, res) => {
     res.send(result);
 })
 
-const accoutApi = require("./src/routes/account")
+const accoutApi = require("../src/routes/account");
 app.use("/account", accoutApi);
 
 app.listen(port, () => {
