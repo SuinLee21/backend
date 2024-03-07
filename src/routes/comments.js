@@ -7,7 +7,10 @@ const modules = require("../module");
 router.post("/", async (req, res) => {
     const { postIdx, contents } = req.body;
     const userIdx = req.session.idx;
-    const sql = "INSERT INTO comment(user_idx, post_idx, contents) VALUES(?, ?, ?)";
+    const sql = `
+        INSERT INTO backend.comment(user_idx, post_idx, contents)
+        VALUES($1, $2, $3)
+    `;
     const params = [userIdx, postIdx, contents];
     const result = {
         "success": false,
@@ -15,11 +18,11 @@ router.post("/", async (req, res) => {
     };
 
     try {
-        if (userIdx.length === 0) {
+        if (!userIdx) {
             throw new Error("접근 권한이 없습니다.");
         }
 
-        await modules.query(sql, params);
+        await psql.query(sql, params);
 
         result.success = true;
         result.message = "댓글이 작성되었습니다.";
@@ -30,23 +33,50 @@ router.post("/", async (req, res) => {
     }
 })
 
+//모든 댓글 읽기
+router.get('/', async (req, res) => {
+    const sql = "SELECT * FROM backend.comment";
+    const result = {
+        "success": false,
+        "message": "",
+        "data": null
+    }
+
+    try {
+        const commentData = await psql.query(sql);
+
+        if (commentData.rows.length === 0) {
+            throw new Error('댓글이 존재하지 않습니다.');
+        }
+
+        result.success = true;
+        result.message = "정상적으로 데이터를 불러왔습니다.";
+        result.data = commentData.rows;
+    } catch (err) {
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+})
+
 //댓글 수정
 router.put("/:idx", async (req, res) => {
-    const { userIdx, contents } = req.body;
+    const { contents } = req.body;
     const commentIdx = req.params.idx;
-    const sql = "UPDATE comment SET contents=? WHERE idx=?";
-    const params = [contents, commentIdx];
+    const userIdx = req.session.idx;
+    const sql = "UPDATE backend.comment SET contents=$1 WHERE idx=$2 AND user_idx=$3";
+    const params = [contents, commentIdx, userIdx];
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        if (req.session.idx !== userIdx) {
+        if (!userIdx) {
             throw new Error("접근 권한이 없습니다.");
         }
 
-        await modules.query(sql, params);
+        await psql.query(sql, params);
 
         result.success = true;
         result.message = "댓글이 수정되었습니다.";
@@ -59,21 +89,21 @@ router.put("/:idx", async (req, res) => {
 
 //댓글 삭제
 router.delete("/:idx", async (req, res) => {
-    const { userIdx } = req.body;
-    const idx = req.params.idx;
-    const sql = "Delete FROM comment WHERE idx=?";
-    const params = [idx];
+    const userIdx = req.session.idx;
+    const commentIdx = req.params.idx;
+    const sql = "Delete FROM backend.comment WHERE idx=$1 AND user_idx=$2";
+    const params = [commentIdx, userIdx];
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        if (req.session.idx !== userIdx) {
+        if (!userIdx) {
             throw new Error("접근 권한이 없습니다.");
         }
 
-        await modules.query(sql, params);
+        await psql.query(sql, params);
 
         result.success = true;
         result.message = "댓글이 삭제되었습니다.";

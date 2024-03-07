@@ -3,6 +3,33 @@ const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
 const modules = require("../module");
 
+//게시글 작성
+router.post("/", async (req, res) => {
+    const { title, contents, category } = req.body;
+    const userIdx = req.session.idx;
+    const sql = "INSERT INTO backend.post(user_idx, title, contents, category) VALUES($1, $2, $3, $4)";
+    const params = [userIdx, title, contents, category];
+    const result = {
+        "success": false,
+        "message": ""
+    };
+
+    try {
+        if (!userIdx) {
+            throw new Error("접근 권한이 없습니다.");
+        }
+
+        await psql.query(sql, params);
+
+        result.success = true;
+        result.message = "게시글이 작성되었습니다.";
+    } catch (err) {
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+})
+
 //모든 게시글 읽기
 router.get('/', async (req, res) => {
     const sql = "SELECT * FROM backend.post";
@@ -22,33 +49,6 @@ router.get('/', async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = postData.rows;
-    } catch (err) {
-        result.message = err.message;
-    } finally {
-        res.send(result);
-    }
-})
-
-//게시글 작성
-router.post("/", async (req, res) => {
-    const { title, contents, category } = req.body;
-    const userIdx = req.session.idx;
-    const sql = "INSERT INTO backend.post(user_idx, title, contents, category) VALUES($1, $2, $3, $4)";
-    const params = [1, title, contents, category];
-    const result = {
-        "success": false,
-        "message": ""
-    };
-
-    try {
-        if (!userIdx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
-
-        await psql.query(sql, params);
-
-        result.success = true;
-        result.message = "게시글이 작성되었습니다.";
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -125,7 +125,7 @@ router.delete("/:idx", async (req, res) => {
     const userIdx = req.session.idx;
     const postIdx = req.params.idx;
     const sql = "Delete FROM backend.post WHERE idx=$1 AND user_idx=$2";
-    const params = [postIdx, 1];
+    const params = [postIdx, userIdx];
     const result = {
         "success": false,
         "message": ""
