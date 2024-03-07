@@ -4,7 +4,7 @@ const mariadb = require("../../database/connect/mariadb");
 const modules = require("../module");
 
 router.get('/', async (req, res) => {
-    const sql = "SELECT * FROM backend.post_like";
+    const sql = "SELECT * FROM backend.comment";
     const result = {
         "success": false,
         "message": "",

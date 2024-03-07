@@ -33,32 +33,6 @@ router.post("/", async (req, res) => {
     }
 })
 
-//모든 댓글 읽기
-router.get('/', async (req, res) => {
-    const sql = "SELECT * FROM backend.comment";
-    const result = {
-        "success": false,
-        "message": "",
-        "data": null
-    }
-
-    try {
-        const commentData = await psql.query(sql);
-
-        if (commentData.rows.length === 0) {
-            throw new Error('댓글이 존재하지 않습니다.');
-        }
-
-        result.success = true;
-        result.message = "정상적으로 데이터를 불러왔습니다.";
-        result.data = commentData.rows;
-    } catch (err) {
-        result.message = err.message;
-    } finally {
-        res.send(result);
-    }
-})
-
 //댓글 수정
 router.put("/:idx", async (req, res) => {
     const { contents } = req.body;
@@ -107,6 +81,91 @@ router.delete("/:idx", async (req, res) => {
 
         result.success = true;
         result.message = "댓글이 삭제되었습니다.";
+    } catch (err) {
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+})
+
+//특정 댓글 좋아요
+router.post("/like", async (req, res) => {
+    const { commentIdx } = req.body;
+    const userIdx = req.session.idx;
+    let sql = "SELECT * FROM backend.comment_like WHERE user_idx=$1 AND comment_idx=$2";
+    let params = [userIdx, commentIdx];
+    const result = {
+        "success": false,
+        "message": ""
+    };
+    let commentLikeCount = 0;
+    console.log(commentIdx)
+
+    try {
+        if (!userIdx) {
+            throw new Error("접근 권한이 없습니다.");
+        }
+
+        // 이미 좋아요가 눌려져 있는지 확인
+        let commentLikeData = await psql.query(sql, params);
+
+        if (commentLikeData.rows.length !== 0) {
+            throw new Error('이미 좋아요가 눌러져 있습니다.');
+        }
+
+        //게시글 좋아요
+        sql = `
+            INSERT INTO backend.comment_like(user_idx, comment_idx)
+            VALUES($1, $2)
+        `;
+        await psql.query(sql, params);
+
+        //특정 게시글 좋아요 갯수 불러오기
+        sql = "SELECT * FROM backend.comment_like WHERE comment_idx=$1";
+        params = [commentIdx];
+
+        commentLikeData = await psql.query(sql, params);
+
+        commentLikeCount = commentLikeData.rows.length;
+
+        result.message = "좋아요 정상 작동.";
+
+        //게시글 좋아요 갯수 업데이트
+        sql = "UPDATE backend.comment SET like_count=$1 WHERE idx=$2 AND user_idx=$3";
+        params = [commentLikeCount, commentIdx, userIdx];
+
+        await psql.query(sql, params);
+
+        result.success = true;
+        result.message = "좋아요, 업데이트 정상 작동.";
+    } catch (err) {
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+})
+
+//좋아요 취소 //pathparmeter??
+router.delete("/:idx/like", async (req, res) => {
+    const userIdx = req.session.idx;
+    const commentIdx = req.params.idx;
+    const sql = "Delete FROM backend.comment_like WHERE comment_idx=$1 AND user_idx=$2";
+    const params = [commentIdx, userIdx];
+    const result = {
+        "success": false,
+        "message": ""
+    };
+    console.log(commentIdx)
+
+    try {
+        if (!userIdx) {
+            throw new Error("접근 권한이 없습니다.");
+        }
+
+        await psql.query(sql, params);
+
+        result.success = true;
+        result.message = "좋아요가 취소되었습니다.";
     } catch (err) {
         result.message = err.message;
     } finally {

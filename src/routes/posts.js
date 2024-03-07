@@ -120,6 +120,34 @@ router.get("/:category", async (req, res) => {
     }
 })
 
+//특정 게시글 댓글 읽기  //여기가 맞을까??
+router.get('/:idx/comments', async (req, res) => {
+    const postIdx = req.params.idx;
+    const sql = "SELECT * FROM backend.comment WHERE post_idx=$1";
+    const params = [postIdx];
+    const result = {
+        "success": false,
+        "message": "",
+        "data": null
+    }
+
+    try {
+        const commentData = await psql.query(sql, params);
+
+        if (commentData.rows.length === 0) {
+            throw new Error('댓글이 존재하지 않습니다.');
+        }
+
+        result.success = true;
+        result.message = "정상적으로 데이터를 불러왔습니다.";
+        result.data = commentData.rows;
+    } catch (err) {
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+})
+
 //게시글 수정
 router.put("/:idx", async (req, res) => {
     const { title, contents, category } = req.body;
@@ -250,6 +278,8 @@ router.delete("/:idx/like", async (req, res) => {
         if (!userIdx) {
             throw new Error("접근 권한이 없습니다.");
         }
+
+        //굳이 데이터 있는지 확인해야 되나??
 
         await psql.query(sql, params);
 
