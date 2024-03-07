@@ -4,9 +4,9 @@ const psql = require("../../database/connect/postgre");
 const modules = require("../module");
 
 //회원탈퇴
-router.delete("/:idx", async (req, res) => {
-    const userIdx = req.params.idx;
-    const sql = "DELETE FROM user WHERE idx=?";
+router.delete("/", async (req, res) => {
+    const userIdx = req.session.idx;
+    const sql = "DELETE FROM backend.user WHERE idx=$1";
     const params = [userIdx];
     const result = {
         "success": false,
@@ -14,11 +14,11 @@ router.delete("/:idx", async (req, res) => {
     };
 
     try {
-        if (req.session.idx !== userIdx) {
+        if (!userIdx) {
             throw new Error("접근 권한이 없습니다.");
         }
 
-        await modules.query(sql, params);
+        await psql.query(sql, params);
 
         result.success = true;
         result.message = "회원탈퇴가 되었습니다.";
@@ -31,9 +31,9 @@ router.delete("/:idx", async (req, res) => {
 });
 
 //특정 유저 정보 보기
-router.get("/:idx", async (req, res) => {
-    const userIdx = req.params.idx;
-    const sql = "SELECT * FROM user WHERE idx=?";
+router.get("/", async (req, res) => {
+    const userIdx = req.session.idx;
+    const sql = "SELECT * FROM backend.user WHERE idx=$1";
     const params = [userIdx];
     const result = {
         "success": false,
@@ -42,19 +42,19 @@ router.get("/:idx", async (req, res) => {
     };
 
     try {
-        if (req.session.idx !== userIdx) {
+        if (!userIdx) {
             throw new Error("접근 권한이 없습니다.");
         }
 
-        const userData = await modules.query(sql, params);
+        const userData = await psql.query(sql, params);
 
-        if (userData.length === 0) {
+        if (userData.rows.length === 0) {
             throw new Error('존재하지 않는 정보입니다.');
         }
 
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
-        result.data = userData;
+        result.data = userData.rows;
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -63,10 +63,10 @@ router.get("/:idx", async (req, res) => {
 });
 
 //특정 유저 정보 수정
-router.put("/:idx", modules.checkValidity, async (req, res) => {
+router.put("/", modules.checkValidity, async (req, res) => {
     const { userPw, userName, userPhoneNum } = req.body;
-    const userIdx = req.params.idx;
-    const sql = "UPDATE user SET pw=?, name=?, phoneNum=? WHERE idx=?";
+    const userIdx = req.session.idx;
+    const sql = "UPDATE backend.user SET pw=$1, name=$2, phone_num=$3 WHERE idx=$4";
     const params = [userPw, userName, userPhoneNum, userIdx];
     const result = {
         "success": false,
@@ -74,11 +74,11 @@ router.put("/:idx", modules.checkValidity, async (req, res) => {
     };
 
     try {
-        if (req.session.idx !== userIdx) {
+        if (!userIdx) {
             throw new Error("접근 권한이 없습니다.");
         }
 
-        await modules.query(sql, params);
+        await psql.query(sql, params);
 
         result.success = true;
         result.message = "내 정보가 수정되었습니다.";
