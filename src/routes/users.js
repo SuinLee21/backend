@@ -1,5 +1,6 @@
 const router = require("express").Router();
-const mariadb = require("../../database/connect/mariadb");
+const psql = require("../../database/connect/postgre");
+// const mariadb = require("../../database/connect/mariadb");
 const modules = require("../module");
 
 //회원탈퇴

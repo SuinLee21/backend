@@ -10,4 +10,4 @@ const conn = mariadb.createConnection({
     database: process.env.MYSQL_DATABASE,
 });
 
-module.exports = conn;
+module.exports = conn;  
