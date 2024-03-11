@@ -1,6 +1,7 @@
 const mariadb = require('mysql');
 require('dotenv').config();
 
+// console.log(process.env.HOST);
 // console.log(process.env)
 const conn = mariadb.createConnection({
     host: process.env.HOST,
@@ -10,4 +11,4 @@ const conn = mariadb.createConnection({
     database: process.env.MYSQL_DATABASE,
 });
 
-module.exports = conn;  
+module.exports = conn;

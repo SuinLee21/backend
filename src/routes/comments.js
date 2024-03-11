@@ -65,7 +65,7 @@ router.put("/:idx", async (req, res) => {
 router.delete("/:idx", async (req, res) => {
     const userIdx = req.session.idx;
     const commentIdx = req.params.idx;
-    const sql = "Delete FROM backend.comment WHERE idx=$1 AND user_idx=$2";
+    const sql = "DELETE FROM backend.comment WHERE idx=$1 AND user_idx=$2";
     const params = [commentIdx, userIdx];
     const result = {
         "success": false,
@@ -98,8 +98,6 @@ router.post("/like", async (req, res) => {
         "success": false,
         "message": ""
     };
-    let commentLikeCount = 0;
-    console.log(commentIdx)
 
     try {
         if (!userIdx) {
@@ -107,7 +105,7 @@ router.post("/like", async (req, res) => {
         }
 
         // 이미 좋아요가 눌려져 있는지 확인
-        let commentLikeData = await psql.query(sql, params);
+        const commentLikeData = await psql.query(sql, params);
 
         if (commentLikeData.rows.length !== 0) {
             throw new Error('이미 좋아요가 눌러져 있습니다.');
@@ -120,19 +118,11 @@ router.post("/like", async (req, res) => {
         `;
         await psql.query(sql, params);
 
-        //특정 게시글 좋아요 갯수 불러오기
-        sql = "SELECT * FROM backend.comment_like WHERE comment_idx=$1";
-        params = [commentIdx];
-
-        commentLikeData = await psql.query(sql, params);
-
-        commentLikeCount = commentLikeData.rows.length;
-
         result.message = "좋아요 정상 작동.";
 
         //게시글 좋아요 갯수 업데이트
-        sql = "UPDATE backend.comment SET like_count=$1 WHERE idx=$2 AND user_idx=$3";
-        params = [commentLikeCount, commentIdx, userIdx];
+        sql = "UPDATE backend.comment SET like_count=like_count+1 WHERE idx=$1 AND user_idx=$2";
+        params = [commentIdx, userIdx];
 
         await psql.query(sql, params);
 
@@ -149,18 +139,24 @@ router.post("/like", async (req, res) => {
 router.delete("/:idx/like", async (req, res) => {
     const userIdx = req.session.idx;
     const commentIdx = req.params.idx;
-    const sql = "Delete FROM backend.comment_like WHERE comment_idx=$1 AND user_idx=$2";
+    let sql = "Delete FROM backend.comment_like WHERE comment_idx=$1 AND user_idx=$2";
     const params = [commentIdx, userIdx];
     const result = {
         "success": false,
         "message": ""
     };
-    console.log(commentIdx)
 
     try {
         if (!userIdx) {
             throw new Error("접근 권한이 없습니다.");
         }
+
+        await psql.query(sql, params);
+
+        result.message = "좋아요 삭제 완료.";
+
+        sql = "UPDATE backend.comment SET like_count=like_count-1 WHERE idx=$1 AND user_idx=$2";
+        params = [commentIdx, userIdx];
 
         await psql.query(sql, params);
 

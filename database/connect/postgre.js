@@ -7,7 +7,7 @@ const client = new pg.Pool({
     user: process.env.PSQL_USER,
     password: process.env.PSQL_PASSWORD,
     database: process.env.PSQL_DATABASE,
-    max: process.env.MAX
+    max: process.env.PSQL_MAX
 })
 
 module.exports = client;

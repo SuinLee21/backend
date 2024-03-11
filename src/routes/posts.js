@@ -88,7 +88,7 @@ router.get("/:idx", async (req, res) => {
     }
 })
 
-//특정 카테고리 게시글 전체 읽기
+//특정 카테고리 게시글 전체 읽기  //query String..
 router.get("/:category", async (req, res) => {
     const category = req.params.category;
     const sql = "SELECT * FROM backend.post WHERE category=$1";
@@ -212,12 +212,11 @@ router.post("/like", async (req, res) => {
     const { postIdx } = req.body;
     const userIdx = req.session.idx;
     let sql = "SELECT * FROM backend.post_like WHERE user_idx=$1 AND post_idx=$2";
-    let params = [userIdx, postIdx];
+    const params = [userIdx, postIdx];
     const result = {
         "success": false,
         "message": ""
     };
-    let postLikeCount = 0;
 
     try {
         if (!userIdx) {
@@ -238,19 +237,11 @@ router.post("/like", async (req, res) => {
         `;
         await psql.query(sql, params);
 
-        //특정 게시글 좋아요 갯수 불러오기
-        sql = "SELECT * FROM backend.post_like WHERE post_idx=$1";
-        params = [postIdx];
-
-        postLikeData = await psql.query(sql, params);
-
-        postLikeCount = postLikeData.rows.length;
-
         result.message = "좋아요 정상 작동.";
 
         //게시글 좋아요 갯수 업데이트
-        sql = "UPDATE backend.post SET like_count=$1 WHERE idx=$2 AND user_idx=$3";
-        params = [postLikeCount, postIdx, userIdx];
+        sql = "UPDATE backend.post SET like_count=like_count+1 WHERE idx=$1 AND user_idx=$2";
+        params = [postIdx, userIdx];
 
         await psql.query(sql, params);
 
@@ -267,7 +258,7 @@ router.post("/like", async (req, res) => {
 router.delete("/:idx/like", async (req, res) => {
     const userIdx = req.session.idx;
     const postIdx = req.params.idx;
-    const sql = "Delete FROM backend.post_like WHERE post_idx=$1 AND user_idx=$2";
+    let sql = "Delete FROM backend.post_like WHERE post_idx=$1 AND user_idx=$2";
     const params = [postIdx, userIdx];
     const result = {
         "success": false,
@@ -279,7 +270,12 @@ router.delete("/:idx/like", async (req, res) => {
             throw new Error("접근 권한이 없습니다.");
         }
 
-        //굳이 데이터 있는지 확인해야 되나??
+        await psql.query(sql, params);
+
+        result.message = "좋아요 삭제 완료.";
+
+        sql = "UPDATE backend.post SET like_count=like_count-1 WHERE idx=$1 AND user_idx=$2";
+        params = [postIdx, userIdx];
 
         await psql.query(sql, params);
 

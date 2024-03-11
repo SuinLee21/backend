@@ -13,14 +13,23 @@ router.get('/', async (req, res) => {
 
     try {
         const postData = await psql.query(sql);
+        // const postData = await mariadb.query(sql);
 
-        if (postData.rows.length === 0) {
-            throw new Error('게시글이 존재하지 않습니다.');
-        }
+        // const postData = await new Promise((resolve, reject) => {
+        //     mariadb.query(sql, (err, rows) => {
+        //         resolve(rows);
+        //     })
+        // })
+
+        // console.log(postData.result);
+
+        // if (postData.rows.length === 0) {
+        //     throw new Error('게시글이 존재하지 않습니다.');
+        // }
 
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
-        result.data = postData.rows;
+        result.data = postData;
     } catch (err) {
         result.message = err.message;
     } finally {
