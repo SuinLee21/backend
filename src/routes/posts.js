@@ -2,6 +2,7 @@ const router = require("express").Router();
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
 const modules = require("../module");
+const connectMongoDB = require("../../database/connect/mongodb");
 
 //게시글 작성
 router.post("/", async (req, res) => {
@@ -20,6 +21,21 @@ router.post("/", async (req, res) => {
         }
 
         await psql.query(sql, params);
+
+        const db = await connectMongoDB();
+
+        //post 갯수 증가 후, post 갯수 저장.
+        await db.collection("counter").updateOne({ "name": "counter" }, { $inc: { "post_count": 1 } });
+        const counterData = await db.collection("counter").findOne({ "name": "counter" });
+        const post_count = counterData.post_count;
+
+        //collection("comment")에 새로 생성한 게시글 댓글란 insert
+        await db.collection("comment").insertOne(
+            {
+                "post_idx": post_count,
+                "comment": {}
+            }
+        )
 
         result.success = true;
         result.message = "게시글이 작성되었습니다.";

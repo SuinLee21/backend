@@ -57,6 +57,7 @@ router.post("/login", modules.checkValidity, async (req, res) => {
         result.success = true;
         result.message = "로그인 성공.";
         req.session.idx = userData.rows[0].idx;
+        req.session.userName = userData.rows[0].name;
     } catch (err) {
         console.log(err.message);
         result.message = err.message;

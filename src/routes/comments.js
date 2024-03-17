@@ -8,8 +8,10 @@ const connectMongoDB = require("../../database/connect/mongodb");
 router.post("/", async (req, res) => {
     const { postIdx, contents, commentIdxList } = req.body;
     const userIdx = req.session.idx;
+    const userName = req.session.name;
     const insertObj = {
         "user_idx": userIdx,
+        "user_name": userName,
         "contents": contents,
         "comment": {}
     };
@@ -63,16 +65,17 @@ router.post("/", async (req, res) => {
         //알림 collection에 추가
         await db.collection("notif").insertOne(
             {
+                "post_idx": postIdx,
                 "sender_idx": userIdx,
+                "sender_name": userName,
                 "receiver_idx": postUserData.rows[0].user_idx,
+                "receiver_name": postUserData.rows[0].name,
                 "type": "newComment"
             }
         )
 
         result.success = true;
-        result.message = `${req.session.userName}님께서
-            ${postUserData.rows[0].name}님의 게시글에 새 댓글을 작성했습니다.
-        `;
+        result.message = "댓글이 작성되었습니다.";
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -82,11 +85,9 @@ router.post("/", async (req, res) => {
 
 //댓글 수정
 router.put("/:idx", async (req, res) => {
-    const { contents } = req.body;
+    const { postIdx, contents, commentIdxList } = req.body;
     const commentIdx = req.params.idx;
     const userIdx = req.session.idx;
-    const sql = "UPDATE backend.comment SET contents=$1 WHERE idx=$2 AND user_idx=$3";
-    const params = [contents, commentIdx, userIdx];
     const result = {
         "success": false,
         "message": ""
@@ -97,7 +98,30 @@ router.put("/:idx", async (req, res) => {
             throw new Error("접근 권한이 없습니다.");
         }
 
-        await psql.query(sql, params);
+        const db = await connectMongoDB();
+        const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
+
+        let tempObj = commentData;
+        //commnetIdxList 가 수정하려는 댓글의 idx를 제외한, 부모 idx만 가지고 온다는 전제
+        for (let i = 0; i < commentIdxList; i++) {
+            tempObj = tempObj.comment[commentIdx[i]];
+        }
+
+        //수정 권한 체크
+        if (tempObj.comment[commentIdx].user_idx != userIdx) {
+            throw new Error("접근 권한이 없습니다.");
+        }
+
+        tempObj.comment[commentIdx].contents = contents;
+
+        await db.collection("comment").updateOne(
+            {
+                "post_idx": postIdx
+            },
+            {
+                $set: { "comment": commentData.comment }
+            }
+        )
 
         result.success = true;
         result.message = "댓글이 수정되었습니다.";
@@ -110,10 +134,10 @@ router.put("/:idx", async (req, res) => {
 
 //댓글 삭제
 router.delete("/:idx", async (req, res) => {
+    const { postIdx } = req.body;
     const userIdx = req.session.idx;
     const commentIdx = req.params.idx;
-    const sql = "DELETE FROM backend.comment WHERE idx=$1 AND user_idx=$2";
-    const params = [commentIdx, userIdx];
+    const deleteMessage = "삭제된 댓글입니다.";
     const result = {
         "success": false,
         "message": ""
@@ -124,7 +148,30 @@ router.delete("/:idx", async (req, res) => {
             throw new Error("접근 권한이 없습니다.");
         }
 
-        await psql.query(sql, params);
+        const db = await connectMongoDB();
+        const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
+
+        let tempObj = commentData;
+        //commnetIdxList 가 삭제하려는 댓글의 idx를 제외한, 부모 idx만 가지고 온다는 전제
+        for (let i = 0; i < commentIdxList; i++) {
+            tempObj = tempObj.comment[commentIdx[i]];
+        }
+
+        //삭제 권한 체크
+        if (tempObj.comment[commentIdx].user_idx != userIdx) {
+            throw new Error("접근 권한이 없습니다.");
+        }
+
+        tempObj.comment[commentIdx].contents = deleteMessage;
+
+        await db.collection("comment").updateOne(
+            {
+                "post_idx": postIdx
+            },
+            {
+                $set: { "comment": commentData.comment }
+            }
+        )
 
         result.success = true;
         result.message = "댓글이 삭제되었습니다.";
