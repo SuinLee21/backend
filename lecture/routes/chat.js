@@ -5,11 +5,6 @@ const connectMongoDB = require("../../database/connect/mongodb");
 router.post("/", async (req, res) => {
     const { author, message, comment } = req.body;
 
-    console.log(req.body);
-    console.log(comment)
-    console.log(comment[2]);
-    console.log(comment.length);
-
     const result = {
         "success": false,
         "message": "",
@@ -19,13 +14,13 @@ router.post("/", async (req, res) => {
     // let connect = null;
 
     try {
-        if (author === "" || author === undefined || author === null) {
-            throw new Error("작성자 값 주셈")
-        }
+        // if (author === "" || author === undefined || author === null) {
+        //     throw new Error("작성자 값 주셈")
+        // }
 
-        if (message === "" || message === undefined || message === null) {
-            throw new Error("채팅 값 주셈")
-        }
+        // if (message === "" || message === undefined || message === null) {
+        //     throw new Error("채팅 값 주셈")
+        // }
 
         const db = await connectMongoDB();
 
@@ -43,25 +38,31 @@ router.post("/", async (req, res) => {
         // for (let i = 0; i < data.length; i++) {
         //     await db.collection("notif").insertOne({ "sender": sender, "receiver": data[i].user, "type": "newPost" });
         // }
-        const data1 = await db.collection("notif").findOne({ "post_idx": "2" });
+        const data1 = await db.collection("comment").findOne({ "post_idx": "1" });
 
         const obj = {
-            "user_idx": "2",
-            "contents": "두 번째 댓글임.",
-            "comments": {}
+            "user_idx": 1,
+            "contents": "업뎃 댓글임.",
+            "comment": {}
         }
 
-        data1.comments[5] = obj;
-
-        // data1.comments[1].comments[4] = obj;
+        data1.comment[4].contents = "업데이트 테스트입니다.";
 
         // await db.collection("notif").updateOne({
         //     "post_idx": "2"
         // }, { $set: { "comments.1": data1.comments[1] } });
 
-        await db.collection("notif").updateOne({
-            "post_idx": "2"
-        }, { $set: { "comments": data1.comments } });
+        // await db.collection("notif").updateOne({
+        //     "post_idx": "2"
+        // }, { $set: { "comments": data1.comments } });
+
+        // data1.comment[4].comment[6].comment[1].contents = "삭제된 댓글입니다.";
+
+        await db.collection("comment").updateOne({
+            "post_idx": "1"
+        }, {
+            $set: { "comment": data1.comment }
+        });
 
         result.success = true;
         // result.data = data;
