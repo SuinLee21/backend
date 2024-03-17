@@ -12,7 +12,7 @@ require('dotenv').config();
 // const mongodb = require("../database/connect/mongodb");
 // const connect = await mongodb.connect();
 // const db = connect.db('backend');
-
+console.log(process.env.HOST);
 app.use(express.json());
 app.use(cors());
 

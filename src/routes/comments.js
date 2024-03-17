@@ -2,16 +2,17 @@ const router = require("express").Router();
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
 const modules = require("../module");
+const connectMongoDB = require("../../database/connect/mongodb");
 
 //댓글 작성
 router.post("/", async (req, res) => {
-    const { postIdx, contents } = req.body;
+    const { postIdx, contents, commentIdxList } = req.body;
     const userIdx = req.session.idx;
-    const sql = `
-        INSERT INTO backend.comment(user_idx, post_idx, contents)
-        VALUES($1, $2, $3)
-    `;
-    const params = [userIdx, postIdx, contents];
+    const insertObj = {
+        "user_idx": userIdx,
+        "contents": contents,
+        "comment": {}
+    };
     const result = {
         "success": false,
         "message": ""
@@ -22,10 +23,56 @@ router.post("/", async (req, res) => {
             throw new Error("접근 권한이 없습니다.");
         }
 
-        await psql.query(sql, params);
+        const db = await connectMongoDB();
+
+        //comment 갯수 증가 후, comment 갯수 저장.
+        await db.collection("counter").updateOne({ "name": "counter" }, { $inc: { "comment_count": 1 } });
+        const counterData = await db.collection("counter").findOne({ "name": "counter" });
+        const comment_count = counterData.comment_count;
+
+        //특정 게시글 댓글 모두 불러오기.
+        const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
+        //굳이 나눠야 할까?
+        if (commentIdxList.length === 0) {
+            commentData.comment[comment_count] = insertObj;
+        } else {
+            let tempObj = commentData;
+            for (let i = 0; i < commentIdxList.length; i++) {
+                tempObj = tempObj.comment[commentIdxList[i]];
+            }
+            tempObj.comment[comment_count] = insertObj;
+        }
+        //댓글 작성
+        await db.collection("comment").updateOne(
+            {
+                "post_idx": postIdx
+            },
+            {
+                $set: { "comment": commentData.comment }
+            }
+        )
+
+        //게시글 user_idx와 user_name 가져오기
+        const postUserData = await psql.query(`
+            SELECT p.user_idx, u.name
+            FROM backend.post p
+            INNER JOIN backend.user u
+            ON p.idx=$1 AND p.user_idx=u.idx
+        `, [postIdx]);
+
+        //알림 collection에 추가
+        await db.collection("notif").insertOne(
+            {
+                "sender_idx": userIdx,
+                "receiver_idx": postUserData.rows[0].user_idx,
+                "type": "newComment"
+            }
+        )
 
         result.success = true;
-        result.message = "댓글이 작성되었습니다.";
+        result.message = `${req.session.userName}님께서
+            ${postUserData.rows[0].name}님의 게시글에 새 댓글을 작성했습니다.
+        `;
     } catch (err) {
         result.message = err.message;
     } finally {

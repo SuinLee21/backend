@@ -6,16 +6,16 @@ const postsApi = require("./routes/posts");
 const commentsApi = require("./routes/comments");
 const utillsApi = require("./routes/utills");
 
-const mariadb = require("../database/connect/mariadb");
-mariadb.connect();
+// const mariadb = require("../database/connect/mariadb");
+// mariadb.connect();
 
 require('dotenv').config();
-// const pg = require("../database/connect/postgre");
-// pg.connect(err => {
-//     if (err) {
-//         console.log(err);
-//     }
-// })
+const pg = require("../database/connect/postgre");
+pg.connect(err => {
+    if (err) {
+        console.log(err);
+    }
+})
 
 const app = express();
 const port = process.env.HTTP_PORT;
