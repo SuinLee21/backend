@@ -5,7 +5,6 @@ const modules = require("../module");
 const connectMongoDB = require("../../database/connect/mongodb");
 
 router.get('/', async (req, res) => {
-    const sql = "SELECT * FROM backend.comment";
     const result = {
         "success": false,
         "message": "",
@@ -13,7 +12,9 @@ router.get('/', async (req, res) => {
     }
 
     try {
-        const postData = await psql.query(sql);
+        const postData = await psql.query(`
+            SELECT * FROM backend.comment
+        `);
         // const postData = await mariadb.query(sql);
 
         // const postData = await new Promise((resolve, reject) => {
@@ -41,15 +42,16 @@ router.get('/', async (req, res) => {
 //로그인
 router.post("/login", modules.checkValidity, async (req, res) => {
     const { userId, userPw } = req.body;
-    const sql = "SELECT * FROM backend.user WHERE id=$1 AND pw=$2";
-    const params = [userId, userPw];
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        const userData = await psql.query(sql, params);
+        const userData = await psql.query(`
+            SELECT * FROM backend.user
+            WHERE id=$1 AND pw=$2
+        `, [userId, userPw]);
 
         if (userData.rows.length === 0) {
             throw new Error('회원정보가 일치하지 않습니다.');
@@ -70,15 +72,16 @@ router.post("/login", modules.checkValidity, async (req, res) => {
 //회원가입
 router.post("/signup", modules.checkValidity, async (req, res) => {
     const { userId, userPw, userName, userPhoneNum } = req.body;
-    const sql = "INSERT INTO backend.user(id, pw, name, phone_num) VALUES($1, $2, $3, $4)";
-    const params = [userId, userPw, userName, userPhoneNum];
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        await psql.query(sql, params);
+        await psql.query(`
+            INSERT INTO backend.user(id, pw, name, phone_num)
+            VALUES($1, $2, $3, $4)
+        `, [userId, userPw, userName, userPhoneNum]);
 
         result.success = true;
         result.message = "정상적으로 가입되었습니다.";
@@ -114,8 +117,6 @@ router.get("/logout", (req, res) => {
 //아이디 찾기 // 수정
 router.get("/users-id", modules.checkValidity, async (req, res) => {
     const { userName, userPhoneNum } = req.query;
-    const sql = "SELECT * FROM backend.user WHERE name=$1 AND phone_num=$2";
-    const params = [userName, userPhoneNum];
     const result = {
         "success": false,
         "message": "",
@@ -123,7 +124,10 @@ router.get("/users-id", modules.checkValidity, async (req, res) => {
     };
 
     try {
-        const userData = await psql.query(sql, params);
+        const userData = await psql.query(`
+            SELECT * FROM backend.user
+            WHERE name=$1 AND phone_num=$2
+        `, [userName, userPhoneNum]);
 
         if (userData.rows.length === 0) {
             throw new Error('회원정보가 일치하지 않습니다.');
@@ -142,8 +146,6 @@ router.get("/users-id", modules.checkValidity, async (req, res) => {
 //비밀번호 찾기
 router.post("/users-pw", modules.checkValidity, async (req, res) => {
     const { userId, userName, userPhoneNum } = req.body;
-    const sql = "SELECT * FROM backend.user WHERE id=$1 AND name=$2 AND phone_num=$3";
-    const params = [userId, userName, userPhoneNum];
     const result = {
         "success": false,
         "message": "",
@@ -151,7 +153,10 @@ router.post("/users-pw", modules.checkValidity, async (req, res) => {
     };
 
     try {
-        const userData = await psql.query(sql, params);
+        const userData = await psql.query(`
+            SELECT * FROM backend.user
+            WHERE id=$1 AND name=$2 AND phone_num=$3
+        `, [userId, userName, userPhoneNum]);
 
         if (userData.rows.length === 0) {
             throw new Error('회원정보가 일치하지 않습니다.');
