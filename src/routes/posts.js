@@ -276,6 +276,20 @@ router.post("/like", async (req, res) => {
 
         await psql.query(sql, params);
 
+        //게시글 작성자의 user_idx 가지고 오기
+        const posterIdx = await psql.query(`
+            SELECT user_idx FROM backend.post WHERE idx=$1
+        `, [postIdx]);
+
+        await db.collection("notif").insertOne(
+            {
+                "sender_idx": userIdx,
+                "sender_name": req.session.userName,
+                "receiver_idx": posterIdx.rows[0].user_idx,
+                "type": "postLike"
+            }
+        )
+
         result.success = true;
         result.message = "좋아요, 업데이트 정상 작동.";
     } catch (err) {
