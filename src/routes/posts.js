@@ -37,6 +37,21 @@ router.post("/", async (req, res) => {
             }
         )
 
+        const userIdxList = await psql.query(`
+            SELECT idx FROM backend.user WHERE idx NOT IN($1)
+        `, [userIdx]);
+
+        for (let i = 0; i < userIdxList.rows.length; i++) {
+            await db.collection("notif").insertOne(
+                {
+                    "post_idx": post_count,
+                    "sender_name": req.session.name,
+                    "receiver_idx": userIdxList.rows[i].idx,
+                    "type": "newPost"
+                }
+            )
+        }
+
         result.success = true;
         result.message = "게시글이 작성되었습니다.";
     } catch (err) {

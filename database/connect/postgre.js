@@ -10,4 +10,13 @@ const client = new pg.Pool({
     max: process.env.PSQL_MAX
 })
 
+// const client = new pg.Pool({
+//     host: "localhost",
+//     port: 5432,
+//     user: "ubuntu",
+//     password: 1234,
+//     database: "web",
+//     max: 3
+// })
+
 module.exports = client;

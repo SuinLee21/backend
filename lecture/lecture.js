@@ -8,6 +8,12 @@ const port = 8000;
 const sslPort = 8443;
 
 require('dotenv').config();
+const pg = require("../database/connect/postgre");
+pg.connect(err => {
+    if (err) {
+        console.log(err);
+    }
+})
 
 // const mongodb = require("../database/connect/mongodb");
 // const connect = await mongodb.connect();

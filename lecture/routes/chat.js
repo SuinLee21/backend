@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const client = require("mongodb").MongoClient;
 const connectMongoDB = require("../../database/connect/mongodb");
+const psql = require("../../database/connect/postgre");
 
 router.post("/", async (req, res) => {
     const { author, message, comment } = req.body;
@@ -46,6 +47,11 @@ router.post("/", async (req, res) => {
             "comment": {}
         }
 
+        const data = await psql.query(`
+            SELECT idx FROM backend.user
+        `);
+
+        console.log(data.rows[1].idx);
         // data1.comment[4].contents = "업데이트 테스트입니다.";
 
         // await db.collection("notif").updateOne({
