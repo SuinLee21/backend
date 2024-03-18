@@ -13,6 +13,7 @@ router.post("/", async (req, res) => {
         "user_idx": userIdx,
         "user_name": userName,
         "contents": contents,
+        "like_count": 0,
         "comment": {}
     };
     const result = {
@@ -207,7 +208,7 @@ router.post("/like", async (req, res) => {
             }
         )
 
-        if (!commentLikeData) {
+        if (commentLikeData) {
             throw new Error("이미 좋아요가 눌러져 있습니다.");
         }
 
@@ -224,7 +225,7 @@ router.post("/like", async (req, res) => {
         //댓글 좋아요 갯수 업데이트
         const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
         let tempObj = commentData;
-        for (let i = 0; i < commentIdxList; i++) {
+        for (let i = 0; i < commentIdxList - 1; i++) {
             tempObj = tempObj.comment[commentIdxList[i]];
         }
 
@@ -250,10 +251,9 @@ router.post("/like", async (req, res) => {
 
 //좋아요 취소 //pathparmeter??
 router.delete("/:idx/like", async (req, res) => {
+    const { postIdx, commentIdxList } = req.body;
     const userIdx = req.session.idx;
     const commentIdx = req.params.idx;
-    let sql = "Delete FROM backend.comment_like WHERE comment_idx=$1 AND user_idx=$2";
-    const params = [commentIdx, userIdx];
     const result = {
         "success": false,
         "message": ""
@@ -264,17 +264,51 @@ router.delete("/:idx/like", async (req, res) => {
             throw new Error("접근 권한이 없습니다.");
         }
 
-        await psql.query(sql, params);
+        const db = await connectMongoDB();
 
-        result.message = "좋아요 삭제 완료.";
+        // 이미 좋아요가 눌려져 있는지 확인
+        const commentLikeData = await db.collection("comment_like").findOne(
+            {
+                "user_idx": userIdx,
+                "comment_idx": commentIdx
+            }
+        )
 
-        sql = "UPDATE backend.comment SET like_count=like_count-1 WHERE idx=$1 AND user_idx=$2";
-        params = [commentIdx, userIdx];
+        if (!commentLikeData) {
+            throw new Error("좋아요가 없습니다.");
+        }
 
-        await psql.query(sql, params);
+        //댓글 좋아요 취소
+        await db.collection("comment_like").deleteOne(
+            {
+                "user_idx": userIdx,
+                "comment_idx": commentIdx
+            }
+        )
+
+        result.message = "좋아요 정상 작동.";
+
+        //댓글 좋아요 갯수 업데이트
+        const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
+        let tempObj = commentData;
+        for (let i = 0; i < commentIdxList; i++) {
+            tempObj = tempObj.comment[commentIdxList[i]];
+        }
+
+        tempObj.comment[commentIdx].like_count -= 1;
+
+        await db.collection("comment").updateOne(
+            {
+                "post_idx": postIdx
+            },
+            {
+                $set: { "comment": commentData.comment }
+            }
+        )
+
 
         result.success = true;
-        result.message = "좋아요가 취소되었습니다.";
+        result.message = "좋아요 취소, 업데이트 완료.";
     } catch (err) {
         result.message = err.message;
     } finally {
