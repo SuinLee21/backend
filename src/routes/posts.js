@@ -37,10 +37,12 @@ router.post("/", async (req, res) => {
             }
         )
 
+        //psql backend.user에서 세션에 저장된 idx를 제외하고 모두 가져오기
         const userIdxList = await psql.query(`
             SELECT idx FROM backend.user WHERE idx NOT IN($1)
         `, [userIdx]);
 
+        //알림 collection에 추가
         for (let i = 0; i < userIdxList.rows.length; i++) {
             await db.collection("notif").insertOne(
                 {
@@ -281,6 +283,7 @@ router.post("/like", async (req, res) => {
             SELECT user_idx FROM backend.post WHERE idx=$1
         `, [postIdx]);
 
+        //알림 collection에 추가
         await db.collection("notif").insertOne(
             {
                 "sender_idx": userIdx,

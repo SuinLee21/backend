@@ -2,6 +2,7 @@ const router = require("express").Router();
 const psql = require("../../database/connect/postgre");
 const mariadb = require("../../database/connect/mariadb");
 const modules = require("../module");
+const connectMongoDB = require("../../database/connect/mongodb");
 
 router.get('/', async (req, res) => {
     const sql = "SELECT * FROM backend.comment";
@@ -165,5 +166,36 @@ router.post("/users-pw", modules.checkValidity, async (req, res) => {
         res.send(result);
     }
 });
+
+router.get("/notifs", async (req, res) => {
+    const userIdx = req.session.idx;
+    const result = {
+        "success": false,
+        "message": "",
+        "data": null
+    }
+
+    try {
+        if (!userIdx) {
+            throw new Error("접근 권한이 없습니다.");
+        }
+
+        const db = await connectMongoDB();
+
+        const notifData = await db.collection("notif").find(
+            {
+                "receiver_idx": userIdx
+            }
+        ).toArray();
+
+        result.success = true;
+        result.message = "정상적으로 알림들을 불러왔습니다.";
+        result.data = notifData;
+    } catch (err) {
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+})
 
 module.exports = router;
