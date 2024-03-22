@@ -174,7 +174,7 @@ router.post("/users-pw", modules.checkValidity, async (req, res) => {
 
 //알림 불러오기
 router.get("/notifs", async (req, res) => {
-    const userIdx = req.session.idx;
+    const userIdx = 2;
     const result = {
         "success": false,
         "message": "",
@@ -190,7 +190,7 @@ router.get("/notifs", async (req, res) => {
 
         const notifData = await db.collection("notif").find(
             {
-                "receiver_idx": userIdx
+                "receiver_idx": parseInt(userIdx)
             }
         ).toArray();
 

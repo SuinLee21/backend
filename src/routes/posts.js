@@ -167,9 +167,9 @@ router.get('/:idx/comments', async (req, res) => {
     }
 
     try {
-        // if (!req.session.idx) {
-        //     throw new Error("접근 권한이 없습니다.");
-        // }
+        if (!req.session.idx) {
+            throw new Error("접근 권한이 없습니다.");
+        }
 
         const db = await connectMongoDB();
 
@@ -179,13 +179,9 @@ router.get('/:idx/comments', async (req, res) => {
             }
         )
 
-        if (Object.keys(commentData.comment)) {
-            throw new Error('해당 게시글에 댓글이 존재하지 않습니다.');
-        }
-
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
-        result.data = commentData.rows;
+        result.data = commentData;
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -225,7 +221,7 @@ router.put("/:idx", async (req, res) => {
 
 //게시글 삭제
 router.delete("/:idx", async (req, res) => {
-    const userIdx = req.session.idx;
+    const userIdx = 1;
     const postIdx = req.params.idx;
     const result = {
         "success": false,
@@ -244,10 +240,10 @@ router.delete("/:idx", async (req, res) => {
             }
         )
 
-        await psql.query(`
-            Delete FROM backend.post
-            WHERE idx=$1 AND user_idx=$2
-        `, [postIdx, userIdx]);
+        // await psql.query(`
+        //     Delete FROM backend.post
+        //     WHERE idx=$1 AND user_idx=$2
+        // `, [postIdx, userIdx]);
 
         result.success = true;
         result.message = "게시글이 삭제되었습니다.";
