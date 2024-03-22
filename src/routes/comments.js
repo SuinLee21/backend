@@ -6,10 +6,12 @@ const connectMongoDB = require("../../database/connect/mongodb");
 
 //댓글 작성
 router.post("/", async (req, res) => {
-    const { postIdx, contents, commentIdxList } = req.body;
-    const userIdx = req.session.idx;
+    const postIdx = parseInt(req.body.postIdx);
+    const contents = req.body.contents;
+    const commentIdxList = req.body.commentIdxList;
+    const userIdx = parseInt(req.session.idx);
     const insertObj = {
-        "user_idx": parseInt(userIdx),
+        "user_idx": userIdx,
         // "user_name": userName,
         "contents": contents,
         "like_count": 0,
@@ -33,7 +35,7 @@ router.post("/", async (req, res) => {
         const commentCount = counterData.comment_count;
 
         //특정 게시글 댓글 모두 불러오기.
-        const commentData = await db.collection("comment").findOne({ "post_idx": parseInt(postIdx) });
+        const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
 
         //obj에 댓글 추가
         let tempObj = commentData;
@@ -45,7 +47,7 @@ router.post("/", async (req, res) => {
         //댓글 작성
         await db.collection("comment").updateOne(
             {
-                "post_idx": parseInt(postIdx)
+                "post_idx": postIdx
             },
             {
                 $set: { "comment": commentData.comment }
@@ -64,7 +66,7 @@ router.post("/", async (req, res) => {
         if (posterIdx !== userIdx) {
             await db.collection("notif").insertOne(
                 {
-                    "post_idx": parseInt(postIdx),
+                    "post_idx": postIdx,
                     "sender_name": req.session.userName,
                     "receiver_idx": posterIdx,
                     "type": "newComment"
@@ -83,9 +85,11 @@ router.post("/", async (req, res) => {
 
 //댓글 수정
 router.put("/:idx", async (req, res) => {
-    const { postIdx, contents, commentIdxList } = req.body;
-    const commentIdx = req.params.idx;
-    const userIdx = req.session.idx;
+    const postIdx = parseInt(req.body.postIdx);
+    const contents = req.body.contents;
+    const commentIdxList = req.body.commentIdxList;
+    const commentIdx = parseInt(req.params.idx);
+    const userIdx = parseInt(req.session.idx);
     const result = {
         "success": false,
         "message": ""
@@ -99,7 +103,7 @@ router.put("/:idx", async (req, res) => {
         const db = await connectMongoDB();
 
         //댓글 정보 가져오기
-        const commentData = await db.collection("comment").findOne({ "post_idx": parseInt(postIdx) });
+        const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
 
         let tempObj = commentData;
         //commnetIdxList 가 수정하려는 댓글의 idx를 제외한, 부모 idx만 가지고 온다는 전제
@@ -116,7 +120,7 @@ router.put("/:idx", async (req, res) => {
 
         await db.collection("comment").updateOne(
             {
-                "post_idx": parseInt(postIdx)
+                "post_idx": postIdx
             },
             {
                 $set: { "comment": commentData.comment }
@@ -134,9 +138,10 @@ router.put("/:idx", async (req, res) => {
 
 //댓글 삭제
 router.delete("/:idx", async (req, res) => {
-    const { postIdx, commentIdxList } = req.body;
-    const userIdx = req.session.idx;
-    const commentIdx = req.params.idx;
+    const postIdx = parseInt(req.body.postIdx);
+    const commentIdxList = req.body.commentIdxList;
+    const userIdx = parseInt(req.session.idx);
+    const commentIdx = parseInt(req.params.idx);
     const deleteMessage = "삭제된 댓글입니다.";
     const result = {
         "success": false,
@@ -151,7 +156,7 @@ router.delete("/:idx", async (req, res) => {
         const db = await connectMongoDB();
 
         //댓글 정보 가져오기
-        const commentData = await db.collection("comment").findOne({ "post_idx": parseInt(postIdx) });
+        const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
 
         let tempObj = commentData;
         //commnetIdxList 가 삭제하려는 댓글의 idx를 제외한, 부모 idx만 가지고 온다는 전제
@@ -168,7 +173,7 @@ router.delete("/:idx", async (req, res) => {
 
         await db.collection("comment").updateOne(
             {
-                "post_idx": parseInt(postIdx)
+                "post_idx": postIdx
             },
             {
                 $set: { "comment": commentData.comment }
@@ -186,8 +191,9 @@ router.delete("/:idx", async (req, res) => {
 
 //특정 댓글 좋아요
 router.post("/like", async (req, res) => {
-    const { postIdx, commentIdxList } = req.body; //수정하려는 idx도 list에 있다는 전제
-    const userIdx = req.session.idx;
+    const postIdx = parseInt(req.body.postIdx);
+    const commentIdxList = req.body.commentIdxList; //수정하려는 idx도 list에 있다는 전제
+    const userIdx = parseInt(req.session.idx);
     const commentIdx = commentIdxList[commentIdxList.length - 1];
     const result = {
         "success": false,
@@ -204,8 +210,8 @@ router.post("/like", async (req, res) => {
         // 이미 좋아요가 눌려져 있는지 확인
         const commentLikeData = await db.collection("comment_like").findOne(
             {
-                "user_idx": parseInt(userIdx),
-                "comment_idx": parseInt(commentIdx)
+                "user_idx": userIdx,
+                "comment_idx": commentIdx
             }
         )
 
@@ -216,15 +222,15 @@ router.post("/like", async (req, res) => {
         //댓글 좋아요
         await db.collection("comment_like").insertOne(
             {
-                "user_idx": parseInt(userIdx),
-                "comment_idx": parseInt(commentIdx)
+                "user_idx": userIdx,
+                "comment_idx": commentIdx
             }
         )
 
         result.message = "좋아요 정상 작동.";
 
         //댓글 좋아요 갯수 업데이트
-        const commentData = await db.collection("comment").findOne({ "post_idx": parseInt(postIdx) });
+        const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
         let tempObj = commentData;
         for (let i = 0; i < commentIdxList.length - 1; i++) {
             tempObj = tempObj.comment[commentIdxList[i]];
@@ -234,7 +240,7 @@ router.post("/like", async (req, res) => {
 
         await db.collection("comment").updateOne(
             {
-                "post_idx": parseInt(postIdx)
+                "post_idx": postIdx
             },
             {
                 $set: { "comment": commentData.comment }
@@ -252,8 +258,9 @@ router.post("/like", async (req, res) => {
 
 //좋아요 취소 //pathparmeter??
 router.delete("/:idx/like", async (req, res) => {
-    const { postIdx, commentIdxList } = req.body; //삭제하려는 idx는 포함하지 않는다는 전제
-    const userIdx = req.session.idx;
+    const postIdx = parseInt(req.body.postIdx);
+    const commentIdxList = req.body.commentIdxList; //삭제하려는 idx는 포함하지 않는다는 전제
+    const userIdx = parseInt(req.session.idx);
     const commentIdx = parseInt(req.params.idx);
     const result = {
         "success": false,
@@ -290,7 +297,7 @@ router.delete("/:idx/like", async (req, res) => {
         result.message = "좋아요 정상 작동.";
 
         //댓글 좋아요 갯수 업데이트
-        const commentData = await db.collection("comment").findOne({ "post_idx": parseInt(postIdx) });
+        const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
         let tempObj = commentData;
         for (let i = 0; i < commentIdxList.length; i++) {
             tempObj = tempObj.comment[commentIdxList[i]];
@@ -300,7 +307,7 @@ router.delete("/:idx/like", async (req, res) => {
 
         await db.collection("comment").updateOne(
             {
-                "post_idx": parseInt(postIdx)
+                "post_idx": postIdx
             },
             {
                 $set: { "comment": commentData.comment }

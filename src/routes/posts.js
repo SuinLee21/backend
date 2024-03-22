@@ -159,7 +159,7 @@ router.get("/category/:idx", async (req, res) => {
 
 //특정 게시글 댓글 읽기
 router.get('/:idx/comments', async (req, res) => {
-    const postIdx = req.params.idx;
+    const postIdx = parseInt(req.params.idx);
     const result = {
         "success": false,
         "message": "",
@@ -175,7 +175,7 @@ router.get('/:idx/comments', async (req, res) => {
 
         const commentData = await db.collection("comment").findOne(
             {
-                "post_idx": parseInt(postIdx)
+                "post_idx": postIdx
             }
         )
 
@@ -221,8 +221,8 @@ router.put("/:idx", async (req, res) => {
 
 //게시글 삭제
 router.delete("/:idx", async (req, res) => {
-    const userIdx = 1;
-    const postIdx = req.params.idx;
+    const userIdx = req.session.idx;
+    const postIdx = parseInt(req.params.idx);
     const result = {
         "success": false,
         "message": ""
@@ -236,14 +236,14 @@ router.delete("/:idx", async (req, res) => {
         const db = await connectMongoDB();
         await db.collection("comment").deleteOne(
             {
-                "post_idx": parseInt(postIdx)
+                "post_idx": postIdx
             }
         )
 
-        // await psql.query(`
-        //     Delete FROM backend.post
-        //     WHERE idx=$1 AND user_idx=$2
-        // `, [postIdx, userIdx]);
+        await psql.query(`
+            Delete FROM backend.post
+            WHERE idx=$1 AND user_idx=$2
+        `, [postIdx, userIdx]);
 
         result.success = true;
         result.message = "게시글이 삭제되었습니다.";
@@ -256,8 +256,8 @@ router.delete("/:idx", async (req, res) => {
 
 //특정 게시글 좋아요
 router.post("/like", async (req, res) => {
-    const { postIdx } = req.body;
-    const userIdx = req.session.idx;
+    const postIdx = parseInt(req.body.postIdx);
+    const userIdx = parseInt(req.session.idx);
     const result = {
         "success": false,
         "message": ""
@@ -291,8 +291,8 @@ router.post("/like", async (req, res) => {
         //게시글 좋아요 갯수 업데이트
         await psql.query(`
             UPDATE backend.post SET like_count=like_count+1
-            WHERE idx=$1 AND user_idx=$2
-        `, [postIdx, userIdx]);
+            WHERE idx=$1
+        `, [postIdx]);
 
         //게시글 작성자의 user_idx 가지고 오기
         const posterIdx = await psql.query(`
@@ -302,8 +302,8 @@ router.post("/like", async (req, res) => {
         //알림 collection에 추가
         await db.collection("notif").insertOne(
             {
-                "post_idx": parseInt(postIdx),
-                "sender_idx": parseInt(userIdx),
+                "post_idx": postIdx,
+                "sender_idx": userIdx,
                 "sender_name": req.session.userName,
                 "receiver_idx": posterIdx.rows[0].user_idx,
                 "type": "postLike"
@@ -321,8 +321,8 @@ router.post("/like", async (req, res) => {
 
 //좋아요 취소
 router.delete("/:idx/like", async (req, res) => {
-    const userIdx = req.session.idx;
-    const postIdx = req.params.idx;
+    const userIdx = parseInt(req.session.idx);
+    const postIdx = parseInt(req.params.idx);
     const result = {
         "success": false,
         "message": ""
@@ -345,13 +345,13 @@ router.delete("/:idx/like", async (req, res) => {
         //좋아요 갯수 업데이트
         await psql.query(`
             UPDATE backend.post SET like_count=like_count-1
-            WHERE idx=$1 AND user_idx=$2
-        `, [postIdx, userIdx]);
+            WHERE idx=$1
+        `, [postIdx]);
 
         await db.collection("notif").deleteOne(
             {
-                "post_idx": parseInt(postIdx),
-                "sender_idx": parseInt(userIdx),
+                "post_idx": postIdx,
+                "sender_idx": userIdx,
                 "type": "postLike"
             }
         )
