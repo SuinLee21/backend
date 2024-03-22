@@ -8,10 +8,9 @@ const connectMongoDB = require("../../database/connect/mongodb");
 router.post("/", async (req, res) => {
     const { postIdx, contents, commentIdxList } = req.body;
     const userIdx = req.session.idx;
-    const userName = req.session.name;
     const insertObj = {
         "user_idx": userIdx,
-        "user_name": userName,
+        // "user_name": userName,
         "contents": contents,
         "like_count": 0,
         "comment": {}
@@ -31,20 +30,18 @@ router.post("/", async (req, res) => {
         //comment 갯수 증가 후, comment 갯수 저장.
         await db.collection("counter").updateOne({ "name": "counter" }, { $inc: { "comment_count": 1 } });
         const counterData = await db.collection("counter").findOne({ "name": "counter" });
-        const comment_count = counterData.comment_count;
+        const commentCount = counterData.commentCount;
 
         //특정 게시글 댓글 모두 불러오기.
         const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
-        //굳이 나눠야 할까?
-        if (commentIdxList.length === 0) {
-            commentData.comment[comment_count] = insertObj;
-        } else {
-            let tempObj = commentData;
-            for (let i = 0; i < commentIdxList.length; i++) {
-                tempObj = tempObj.comment[commentIdxList[i]];
-            }
-            tempObj.comment[comment_count] = insertObj;
+
+        //obj에 댓글 추가
+        let tempObj = commentData;
+        for (let i = 0; i < commentIdxList.length; i++) {
+            tempObj = tempObj.comment[commentIdxList[i]];
         }
+        tempObj.comment[commentCount] = insertObj;
+
         //댓글 작성
         await db.collection("comment").updateOne(
             {
@@ -55,22 +52,19 @@ router.post("/", async (req, res) => {
             }
         )
 
-        //게시글 user_idx와 user_name 가져오기
+        //게시글 user_idx 가져오기
         const postUserData = await psql.query(`
-            SELECT p.user_idx, u.name
-            FROM backend.post p
-            INNER JOIN backend.user u
-            ON p.idx=$1 AND p.user_idx=u.idx
+            SELECT user_idx
+            FROM backend.post
+            WHERE idx=$1
         `, [postIdx]);
 
         //알림 collection에 추가
         await db.collection("notif").insertOne(
             {
                 "post_idx": postIdx,
-                "sender_idx": userIdx,
-                "sender_name": userName,
+                "sender_name": req.session.name,
                 "receiver_idx": postUserData.rows[0].user_idx,
-                "receiver_name": postUserData.rows[0].name,
                 "type": "newComment"
             }
         )
@@ -100,6 +94,8 @@ router.put("/:idx", async (req, res) => {
         }
 
         const db = await connectMongoDB();
+
+        //댓글 정보 가져오기
         const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
 
         let tempObj = commentData;
@@ -110,7 +106,7 @@ router.put("/:idx", async (req, res) => {
 
         //수정 권한 체크
         if (tempObj.comment[commentIdx].user_idx != userIdx) {
-            throw new Error("접근 권한이 없습니다.");
+            throw new Error("수정 권한이 없습니다.");
         }
 
         tempObj.comment[commentIdx].contents = contents;
@@ -150,6 +146,8 @@ router.delete("/:idx", async (req, res) => {
         }
 
         const db = await connectMongoDB();
+
+        //댓글 정보 가져오기
         const commentData = await db.collection("comment").findOne({ "post_idx": postIdx });
 
         let tempObj = commentData;
@@ -160,7 +158,7 @@ router.delete("/:idx", async (req, res) => {
 
         //삭제 권한 체크
         if (tempObj.comment[commentIdx].user_idx != userIdx) {
-            throw new Error("접근 권한이 없습니다.");
+            throw new Error("삭제 권한이 없습니다.");
         }
 
         tempObj.comment[commentIdx].contents = deleteMessage;

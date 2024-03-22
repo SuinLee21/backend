@@ -79,7 +79,7 @@ router.get("/:idx", async (req, res) => {
         }
 
         const userData = await psql.query(`
-            SELECT name, phone_num FROM backend.user
+            SELECT id, name, phone_num FROM backend.user
             WHERE idx=$1
         `, [userIdx]);
 

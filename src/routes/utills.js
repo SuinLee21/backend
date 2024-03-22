@@ -172,6 +172,7 @@ router.post("/users-pw", modules.checkValidity, async (req, res) => {
     }
 });
 
+//알림 불러오기
 router.get("/notifs", async (req, res) => {
     const userIdx = req.session.idx;
     const result = {

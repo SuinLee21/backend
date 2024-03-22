@@ -6,7 +6,7 @@ const connectMongoDB = require("../../database/connect/mongodb");
 
 //게시글 작성
 router.post("/", async (req, res) => {
-    const { title, contents, category } = req.body;
+    const { title, contents, categoryIdx } = req.body;
     const userIdx = req.session.idx;
     const result = {
         "success": false,
@@ -19,21 +19,21 @@ router.post("/", async (req, res) => {
         }
 
         await psql.query(`
-            INSERT INTO backend.post(user_idx, title, contents, category)
-            VALUES($1, $2, $3, $4)"
-        `, [userIdx, title, contents, category]);
+            INSERT INTO backend.post(user_idx, category_idx, title, contents, like_count)
+            VALUES($1, $2, $3, $4, 0)
+        `, [userIdx, categoryIdx, title, contents]);
 
         const db = await connectMongoDB();
 
         //post 갯수 증가 후, post 갯수 저장.
         await db.collection("counter").updateOne({ "name": "counter" }, { $inc: { "post_count": 1 } });
         const counterData = await db.collection("counter").findOne({ "name": "counter" });
-        const post_count = counterData.post_count;
+        const postCount = counterData.post_count;
 
-        //collection("comment")에 새로 생성한 게시글 댓글란 insert
+        //collection("comment")에 새로 생성한 게시글 댓글란 만들기
         await db.collection("comment").insertOne(
             {
-                "post_idx": post_count,
+                "post_idx": postCount,
                 "comment": {}
             }
         )
@@ -47,8 +47,8 @@ router.post("/", async (req, res) => {
         for (let i = 0; i < userIdxList.rows.length; i++) {
             await db.collection("notif").insertOne(
                 {
-                    "post_idx": post_count,
-                    "sender_name": req.session.name,
+                    "post_idx": postCount,
+                    "sender_name": req.session.userName,
                     "receiver_idx": userIdxList.rows[i].idx,
                     "type": "newPost"
                 }
@@ -124,9 +124,9 @@ router.get("/:idx", async (req, res) => {
     }
 })
 
-//특정 카테고리 게시글 전체 읽기  //query String..
-router.get("/:category", async (req, res) => {
-    const category = req.params.category;
+//특정 카테고리 게시글 전체 읽기
+router.get("/category/:idx", async (req, res) => {
+    const categoryIdx = req.params.idx;
     const result = {
         "success": false,
         "message": "",
@@ -140,8 +140,8 @@ router.get("/:category", async (req, res) => {
 
         const postData = await psql.query(`
             SELECT * FROM backend.post
-            WHERE category=$1
-        `, [category]);
+            WHERE category_idx=$1
+        `, [categoryIdx]);
 
         if (postData.rows.length === 0) {
             throw new Error('해당 게시글이 존재하지 않습니다.');
@@ -157,7 +157,7 @@ router.get("/:category", async (req, res) => {
     }
 })
 
-//특정 게시글 댓글 읽기  //여기가 맞을까??
+//특정 게시글 댓글 읽기
 router.get('/:idx/comments', async (req, res) => {
     const postIdx = req.params.idx;
     const result = {
@@ -167,17 +167,20 @@ router.get('/:idx/comments', async (req, res) => {
     }
 
     try {
-        if (!req.session.idx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
+        // if (!req.session.idx) {
+        //     throw new Error("접근 권한이 없습니다.");
+        // }
 
-        const commentData = await psql.query(`
-            SELECT * FROM backend.comment
-            WHERE post_idx=$1
-        `, [postIdx]);
+        const db = await connectMongoDB();
 
-        if (commentData.rows.length === 0) {
-            throw new Error('댓글이 존재하지 않습니다.');
+        const commentData = await db.collection("comment").findOne(
+            {
+                "post_idx": parseInt(postIdx)
+            }
+        )
+
+        if (Object.keys(commentData.comment)) {
+            throw new Error('해당 게시글에 댓글이 존재하지 않습니다.');
         }
 
         result.success = true;
@@ -192,7 +195,7 @@ router.get('/:idx/comments', async (req, res) => {
 
 //게시글 수정
 router.put("/:idx", async (req, res) => {
-    const { title, contents, category } = req.body;
+    const { title, contents, categoryIdx } = req.body;
     const userIdx = req.session.idx;
     const postIdx = req.params.idx;
     const result = {
@@ -207,9 +210,9 @@ router.put("/:idx", async (req, res) => {
 
         await psql.query(`
             UPDATE backend.post
-            SET title=$1, contents=$2, category=$3
+            SET category_idx=$1, title=$2, contents=$3
             WHERE idx=$4 AND user_idx=$5
-        `, [title, contents, category, postIdx, userIdx]);
+        `, [categoryIdx, title, contents, postIdx, userIdx]);
 
         result.success = true;
         result.message = "게시글이 수정되었습니다.";
@@ -234,6 +237,13 @@ router.delete("/:idx", async (req, res) => {
             throw new Error("접근 권한이 없습니다.");
         }
 
+        const db = await connectMongoDB();
+        await db.collection("comment").deleteOne(
+            {
+                "post_idx": parseInt(postIdx)
+            }
+        )
+
         await psql.query(`
             Delete FROM backend.post
             WHERE idx=$1 AND user_idx=$2
@@ -248,7 +258,7 @@ router.delete("/:idx", async (req, res) => {
     }
 })
 
-//특정 게시글 좋아요  //pathparmeter??
+//특정 게시글 좋아요
 router.post("/like", async (req, res) => {
     const { postIdx } = req.body;
     const userIdx = req.session.idx;
@@ -261,6 +271,8 @@ router.post("/like", async (req, res) => {
         if (!userIdx) {
             throw new Error("접근 권한이 없습니다.");
         }
+
+        const db = await connectMongoDB();
 
         // 이미 좋아요가 눌려져 있는지 확인
         let postLikeData = await psql.query(`
@@ -294,7 +306,8 @@ router.post("/like", async (req, res) => {
         //알림 collection에 추가
         await db.collection("notif").insertOne(
             {
-                "sender_idx": userIdx,
+                "post_idx": parseInt(postIdx),
+                "sender_idx": parseInt(userIdx),
                 "sender_name": req.session.userName,
                 "receiver_idx": posterIdx.rows[0].user_idx,
                 "type": "postLike"
@@ -324,6 +337,8 @@ router.delete("/:idx/like", async (req, res) => {
             throw new Error("접근 권한이 없습니다.");
         }
 
+        const db = await connectMongoDB();
+
         await psql.query(`
             Delete FROM backend.post_like
             WHERE post_idx=$1 AND user_idx=$2
@@ -336,6 +351,14 @@ router.delete("/:idx/like", async (req, res) => {
             UPDATE backend.post SET like_count=like_count-1
             WHERE idx=$1 AND user_idx=$2
         `, [postIdx, userIdx]);
+
+        await db.collection("notif").deleteOne(
+            {
+                "post_idx": parseInt(postIdx),
+                "sender_idx": parseInt(userIdx),
+                "type": "postLike"
+            }
+        )
 
         result.success = true;
         result.message = "좋아요가 취소되었습니다.";
