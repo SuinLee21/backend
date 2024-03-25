@@ -2,6 +2,7 @@ const router = require("express").Router();
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
 const modules = require("../module");
+const checkValidity = require("../middlewares/checkValidity");
 
 //회원탈퇴
 router.delete("/", async (req, res) => {
@@ -98,7 +99,7 @@ router.get("/:idx", async (req, res) => {
 });
 
 //특정 유저 정보 수정
-router.put("/", modules.checkValidity, async (req, res) => {
+router.put("/", checkValidity, async (req, res) => {
     const { userPw, userName, userPhoneNum } = req.body;
     const userIdx = req.session.idx;
     const result = {

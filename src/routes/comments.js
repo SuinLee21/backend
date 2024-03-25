@@ -70,7 +70,7 @@ router.post("/", async (req, res) => {
                     "sender_name": req.session.userName,
                     "receiver_idx": posterIdx,
                     "type": "newComment"
-                }
+                } //모듈..
             )
         }
 

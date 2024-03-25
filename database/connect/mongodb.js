@@ -1,10 +1,7 @@
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
-const uri = 'mongodb://localhost:27017';
-console.log(process.env.MONGODB_URI)
-console.log(process.env.MONGODB_MAX)
-console.log(process.env.HOST)
+const uri = process.env.MONGODB_URI;
 const connectMongoDB = async () => {
     try {
         const client = await MongoClient.connect(uri, {

@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const psql = require("../../database/connect/postgre");
 const mariadb = require("../../database/connect/mariadb");
-const modules = require("../module");
+const checkValidity = require("../middlewares/checkValidity");
 const connectMongoDB = require("../../database/connect/mongodb");
 
 router.get('/', async (req, res) => {
@@ -40,7 +40,7 @@ router.get('/', async (req, res) => {
 })
 
 //로그인
-router.post("/login", modules.checkValidity, async (req, res) => {
+router.post("/login", checkValidity, async (req, res) => {
     const { userId, userPw } = req.body;
     const result = {
         "success": false,
@@ -70,7 +70,7 @@ router.post("/login", modules.checkValidity, async (req, res) => {
 });
 
 //회원가입
-router.post("/signup", modules.checkValidity, async (req, res) => {
+router.post("/signup", checkValidity, async (req, res) => {
     const { userId, userPw, userName, userPhoneNum } = req.body;
     const result = {
         "success": false,
@@ -115,7 +115,7 @@ router.get("/logout", (req, res) => {
 });
 
 //아이디 찾기 // 수정
-router.get("/users-id", modules.checkValidity, async (req, res) => {
+router.get("/users-id", checkValidity, async (req, res) => {
     const { userName, userPhoneNum } = req.query;
     const result = {
         "success": false,
@@ -144,7 +144,7 @@ router.get("/users-id", modules.checkValidity, async (req, res) => {
 });
 
 //비밀번호 찾기
-router.post("/users-pw", modules.checkValidity, async (req, res) => {
+router.post("/users-pw", checkValidity, async (req, res) => {
     const { userId, userName, userPhoneNum } = req.body;
     const result = {
         "success": false,
@@ -192,7 +192,7 @@ router.get("/notifs", async (req, res) => {
             {
                 "receiver_idx": userIdx
             }
-        ).toArray();
+        ).toArray(); // 정렬~
 
         result.success = true;
         result.message = "정상적으로 알림들을 불러왔습니다.";
