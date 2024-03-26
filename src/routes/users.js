@@ -3,6 +3,7 @@ const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
 const modules = require("../module");
 const checkValidity = require("../middlewares/checkValidity");
+const permission = require("../modules/permission");
 
 //회원탈퇴
 router.delete("/", async (req, res) => {
@@ -13,9 +14,7 @@ router.delete("/", async (req, res) => {
     };
 
     try {
-        if (!userIdx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
+        permission(userIdx);
 
         await psql.query(`
             DELETE FROM backend.user
@@ -42,9 +41,7 @@ router.get("/", async (req, res) => {
     };
 
     try {
-        if (!userIdx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
+        permission(userIdx);
 
         const userData = await psql.query(`
             SELECT * FROM backend.user
@@ -75,9 +72,7 @@ router.get("/:idx", async (req, res) => {
     };
 
     try {
-        if (!userIdx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
+        permission(userIdx);
 
         const userData = await psql.query(`
             SELECT id, name, phone_num FROM backend.user
@@ -108,9 +103,7 @@ router.put("/", checkValidity, async (req, res) => {
     };
 
     try {
-        if (!userIdx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
+        permission(userIdx);
 
         await psql.query(`
             UPDATE backend.user SET pw=$1, name=$2, phone_num=$3

@@ -3,6 +3,7 @@ const psql = require("../../database/connect/postgre");
 const mariadb = require("../../database/connect/mariadb");
 const checkValidity = require("../middlewares/checkValidity");
 const connectMongoDB = require("../../database/connect/mongodb");
+const permission = require("../modules/permission");
 
 router.get('/', async (req, res) => {
     const result = {
@@ -100,9 +101,7 @@ router.get("/logout", (req, res) => {
     };
 
     try {
-        if (!req.session.idx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
+        permission(req.session.idx);
 
         req.session.destroy();
         result.success = true;
@@ -182,9 +181,7 @@ router.get("/notifs", async (req, res) => {
     }
 
     try {
-        if (!userIdx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
+        permission(userIdx);
 
         const db = await connectMongoDB();
 

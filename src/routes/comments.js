@@ -3,6 +3,7 @@ const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
 const modules = require("../module");
 const connectMongoDB = require("../../database/connect/mongodb");
+const permission = require("../modules/permission");
 
 //댓글 작성
 router.post("/", async (req, res) => {
@@ -12,7 +13,6 @@ router.post("/", async (req, res) => {
     const userIdx = parseInt(req.session.idx);
     const insertObj = {
         "user_idx": userIdx,
-        // "user_name": userName,
         "contents": contents,
         "like_count": 0,
         "comment": {}
@@ -23,9 +23,7 @@ router.post("/", async (req, res) => {
     };
 
     try {
-        if (!userIdx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
+        permission(userIdx);
 
         const db = await connectMongoDB();
 
@@ -96,9 +94,7 @@ router.put("/:idx", async (req, res) => {
     };
 
     try {
-        if (!userIdx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
+        permission(userIdx);
 
         const db = await connectMongoDB();
 
@@ -149,9 +145,7 @@ router.delete("/:idx", async (req, res) => {
     };
 
     try {
-        if (!userIdx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
+        permission(userIdx);
 
         const db = await connectMongoDB();
 
@@ -201,9 +195,7 @@ router.post("/like", async (req, res) => {
     };
 
     try {
-        if (!userIdx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
+        permission(userIdx);
 
         const db = await connectMongoDB();
 
@@ -268,9 +260,7 @@ router.delete("/:idx/like", async (req, res) => {
     };
 
     try {
-        if (!userIdx) {
-            throw new Error("접근 권한이 없습니다.");
-        }
+        permission(userIdx);
 
         const db = await connectMongoDB();
 
