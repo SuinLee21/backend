@@ -209,7 +209,7 @@ router.get("/notifs", async (req, res) => {
             {
                 "receiver_idx": userIdx
             }
-        ).toArray(); // 정렬~
+        ).toArray().sort({ "created_at": -1 });
 
         result.success = true;
         result.message = "정상적으로 알림들을 불러왔습니다.";

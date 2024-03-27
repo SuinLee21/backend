@@ -4,13 +4,14 @@ const psql = require("../../database/connect/postgre");
 const connectMongoDB = require("../../database/connect/mongodb");
 const permission = require("../modules/permission");
 const getCurrentDate = require("../modules/getCurrentDate");
+const updateComment = require("../modules/updateComment");
 
 //댓글 작성
 router.post("/", async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
     const contents = req.body.contents;
     const commentIdxList = req.body.commentIdxList;
-    const userIdx = parseInt(req.session.idx);
+    const userIdx = 1;
     const insertObj = {
         "user_idx": userIdx,
         "contents": contents,
@@ -44,14 +45,7 @@ router.post("/", async (req, res) => {
         tempObj.comment[commentCount] = insertObj;
 
         //댓글 작성
-        await db.collection("comment").updateOne(
-            {
-                "post_idx": postIdx
-            },
-            {
-                $set: { "comment": commentData.comment }
-            }
-        )
+        await updateComment(db, postIdx, commentData.comment);
 
         //게시글 user_idx 가져오기
         const postUserData = await psql.query(`
@@ -68,8 +62,9 @@ router.post("/", async (req, res) => {
                     "post_idx": postIdx,
                     "sender_name": req.session.userName,
                     "receiver_idx": posterIdx,
-                    "type": "newComment"
-                } //모듈..
+                    "type": "newComment",
+                    "created_at": getCurrentDate()
+                }
             )
         }
 
@@ -115,14 +110,7 @@ router.put("/:idx", async (req, res) => {
 
         tempObj.comment[commentIdx].contents = contents;
 
-        await db.collection("comment").updateOne(
-            {
-                "post_idx": postIdx
-            },
-            {
-                $set: { "comment": commentData.comment }
-            }
-        )
+        await updateComment(db, postIdx, commentData.comment);
 
         result.success = true;
         result.message = "댓글이 수정되었습니다.";
@@ -166,14 +154,7 @@ router.delete("/:idx", async (req, res) => {
 
         tempObj.comment[commentIdx].contents = deleteMessage;
 
-        await db.collection("comment").updateOne(
-            {
-                "post_idx": postIdx
-            },
-            {
-                $set: { "comment": commentData.comment }
-            }
-        )
+        await updateComment(db, postIdx, commentData.comment);
 
         result.success = true;
         result.message = "댓글이 삭제되었습니다.";
@@ -231,14 +212,7 @@ router.post("/like", async (req, res) => {
 
         tempObj.comment[commentIdx].like_count += 1;
 
-        await db.collection("comment").updateOne(
-            {
-                "post_idx": postIdx
-            },
-            {
-                $set: { "comment": commentData.comment }
-            }
-        )
+        await updateComment(db, postIdx, commentData.comment);
 
         result.success = true;
         result.message = "좋아요, 업데이트 정상 작동.";
@@ -296,14 +270,7 @@ router.delete("/:idx/like", async (req, res) => {
 
         tempObj.comment[commentIdx].like_count -= 1;
 
-        await db.collection("comment").updateOne(
-            {
-                "post_idx": postIdx
-            },
-            {
-                $set: { "comment": commentData.comment }
-            }
-        )
+        await updateComment(db, postIdx, commentData.comment);
 
 
         result.success = true;

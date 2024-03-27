@@ -9,9 +9,7 @@ const checkLogin = (req, res, next) => {
     }
 
     try {
-        const jwtContent = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
-
-        console.log(jwtContent);
+        jwt.verify(token, process.env.TOKEN_SECRET_KEY);
 
         next();
     } catch (err) {

@@ -3,6 +3,7 @@ const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
 const connectMongoDB = require("../../database/connect/mongodb");
 const permission = require("../modules/permission");
+const getCurrentDate = require("../modules/getCurrentDate");
 const checkLogin = require("../middlewares/checkLogin");
 
 //게시글 작성
@@ -49,7 +50,8 @@ router.post("/", async (req, res) => {
                     "post_idx": postCount,
                     "sender_name": req.session.userName,
                     "receiver_idx": userIdxList.rows[i].idx,
-                    "type": "newPost"
+                    "type": "newPost",
+                    "created_at": getCurrentDate()
                 }
             )
         }
@@ -295,7 +297,8 @@ router.post("/like", async (req, res) => {
                 "sender_idx": userIdx,
                 "sender_name": req.session.userName,
                 "receiver_idx": posterIdx.rows[0].user_idx,
-                "type": "postLike"
+                "type": "postLike",
+                "created_at": getCurrentDate()
             }
         )
 
