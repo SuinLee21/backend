@@ -1,9 +1,9 @@
 const router = require("express").Router();
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
-const modules = require("../module");
 const connectMongoDB = require("../../database/connect/mongodb");
 const permission = require("../modules/permission");
+const checkLogin = require("../middlewares/checkLogin");
 
 //게시글 작성
 router.post("/", async (req, res) => {
@@ -64,7 +64,7 @@ router.post("/", async (req, res) => {
 })
 
 //모든 게시글 읽기
-router.get('/', async (req, res) => {
+router.get('/', checkLogin, async (req, res) => {
     const result = {
         "success": false,
         "message": "",

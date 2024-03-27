@@ -1,7 +1,6 @@
 const router = require("express").Router();
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
-const modules = require("../module");
 const checkValidity = require("../middlewares/checkValidity");
 const permission = require("../modules/permission");
 

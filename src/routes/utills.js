@@ -1,8 +1,11 @@
 const router = require("express").Router();
+const jwt = require("jsonwebtoken");
+const requestIp = require('request-ip');
+
 const psql = require("../../database/connect/postgre");
 const mariadb = require("../../database/connect/mariadb");
-const checkValidity = require("../middlewares/checkValidity");
 const connectMongoDB = require("../../database/connect/mongodb");
+const checkValidity = require("../middlewares/checkValidity");
 const permission = require("../modules/permission");
 
 router.get('/', async (req, res) => {
@@ -45,7 +48,10 @@ router.post("/login", checkValidity, async (req, res) => {
     const { userId, userPw } = req.body;
     const result = {
         "success": false,
-        "message": ""
+        "message": "",
+        "data": {
+            "token": ""
+        }
     };
 
     try {
@@ -58,10 +64,24 @@ router.post("/login", checkValidity, async (req, res) => {
             throw new Error('회원정보가 일치하지 않습니다.');
         }
 
+        const token = jwt.sign(
+            {
+                "iss": userId,
+                "idx": userData.rows[0].idx,
+                "name": userData.rows[0].name,
+                "api": "login",
+                "userIp": requestIp.getClientIp(req),
+                // "reqq": req
+            },
+            process.env.TOKEN_SECRET_KEY,
+            {
+                "expiresIn": "5m"
+            }
+        )
+
         result.success = true;
         result.message = "로그인 성공.";
-        req.session.idx = userData.rows[0].idx;
-        req.session.userName = userData.rows[0].name;
+        result.data.token = token;
     } catch (err) {
         console.log(err.message);
         result.message = err.message;

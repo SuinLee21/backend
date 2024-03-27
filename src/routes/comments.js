@@ -1,9 +1,9 @@
 const router = require("express").Router();
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
-const modules = require("../module");
 const connectMongoDB = require("../../database/connect/mongodb");
 const permission = require("../modules/permission");
+const getCurrentDate = require("../modules/getCurrentDate");
 
 //댓글 작성
 router.post("/", async (req, res) => {
@@ -15,7 +15,8 @@ router.post("/", async (req, res) => {
         "user_idx": userIdx,
         "contents": contents,
         "like_count": 0,
-        "comment": {}
+        "comment": {},
+        "created_at": getCurrentDate()
     };
     const result = {
         "success": false,
