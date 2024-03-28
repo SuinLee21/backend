@@ -12,41 +12,6 @@ const checkLogin = require("../middlewares/checkLogin");
 const permission = require("../modules/permission");
 const logJwt = require("../modules/logJwt");
 
-router.get('/', async (req, res) => {
-    const result = {
-        "success": false,
-        "message": "",
-        "data": null
-    }
-
-    try {
-        const postData = await psql.query(`
-            SELECT * FROM backend.comment
-        `);
-        // const postData = await mariadb.query(sql);
-
-        // const postData = await new Promise((resolve, reject) => {
-        //     mariadb.query(sql, (err, rows) => {
-        //         resolve(rows);
-        //     })
-        // })
-
-        // console.log(postData.result);
-
-        // if (postData.rows.length === 0) {
-        //     throw new Error('게시글이 존재하지 않습니다.');
-        // }
-
-        result.success = true;
-        result.message = "정상적으로 데이터를 불러왔습니다.";
-        result.data = postData;
-    } catch (err) {
-        result.message = err.message;
-    } finally {
-        res.send(result);
-    }
-})
-
 //로그인
 router.post("/login", checkValidity, async (req, res) => {
     const { userId, userPw } = req.body;
@@ -57,6 +22,7 @@ router.post("/login", checkValidity, async (req, res) => {
             "token": ""
         }
     };
+    let token = null;
 
     try {
         const userData = await psql.query(`
@@ -68,7 +34,7 @@ router.post("/login", checkValidity, async (req, res) => {
             throw new Error('회원정보가 일치하지 않습니다.');
         }
 
-        const token = jwt.sign(
+        token = jwt.sign(
             {
                 "iss": userId,
                 "idx": userData.rows[0].idx,
@@ -82,11 +48,11 @@ router.post("/login", checkValidity, async (req, res) => {
         result.success = true;
         result.message = "로그인 성공.";
         result.data.token = token;
-        logJwt(token, requestIp.getClientIp(req), "POST/login", req.body, result);
     } catch (err) {
         console.log(err.message);
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), "POST/login", req.body, result);
         res.send(result);
     }
 });

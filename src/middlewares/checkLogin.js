@@ -2,8 +2,7 @@ const jwt = require("jsonwebtoken");
 require('dotenv').config();
 
 const checkLogin = (req, res, next) => {
-    // const { token } = req.headers;
-    const token = null;
+    const { token } = req.headers;
     const result = {
         "success": false,
         "message": ""
