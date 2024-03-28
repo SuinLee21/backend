@@ -1,9 +1,11 @@
 const jwt = require("jsonwebtoken");
 const getCurrentDate = require(".//getCurrentDate");
+const connectMongoDB = require("../../database/connect/mongodb");
 require('dotenv').config();
 
-const logJwt = (db, token, userIp, api, jwtReq, result) => {
+const logJwt = async (token, userIp, api, reqBody, result) => {
     const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
+    const db = await connectMongoDB();
     console.log(jwtData);
 
     db.collection("logging").insertOne(
@@ -11,7 +13,7 @@ const logJwt = (db, token, userIp, api, jwtReq, result) => {
             "iss": jwtData.iss,
             "userIp": userIp,
             "api": api,
-            "res": jwtReq,
+            "reqBody": reqBody,
             "result": result,
             "request_time": getCurrentDate()
         }

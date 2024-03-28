@@ -1,10 +1,13 @@
 const router = require("express").Router();
+const requestIp = require('request-ip');
+
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
 const connectMongoDB = require("../../database/connect/mongodb");
 const permission = require("../modules/permission");
 const getCurrentDate = require("../modules/getCurrentDate");
 const checkLogin = require("../middlewares/checkLogin");
+const logJwt = require("../modules/logJwt");
 
 //게시글 작성
 router.post("/", async (req, res) => {
@@ -67,6 +70,7 @@ router.post("/", async (req, res) => {
 
 //모든 게시글 읽기
 router.get('/', checkLogin, async (req, res) => {
+    const { token } = req.headers;
     const result = {
         "success": false,
         "message": "",
@@ -74,11 +78,12 @@ router.get('/', checkLogin, async (req, res) => {
     }
 
     try {
-        permission(req.session.idx);
+        // permission(req.session.idx);
 
         const postData = await psql.query(`
             SELECT * FROM backend.post
         `);
+        const db = await connectMongoDB();
 
         if (postData.rows.length === 0) {
             throw new Error('게시글이 존재하지 않습니다.');
@@ -87,6 +92,7 @@ router.get('/', checkLogin, async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = postData.rows;
+        await logJwt(db, token, requestIp.getClientIp(req), "GET/posts", 1, result);
     } catch (err) {
         result.message = err.message;
     } finally {

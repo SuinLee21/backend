@@ -1,31 +1,36 @@
 const router = require("express").Router();
+
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
+
 const checkValidity = require("../middlewares/checkValidity");
+const checkLogin = require("../middlewares/checkLogin");
+
 const permission = require("../modules/permission");
+const logJwt = require("../modules/logJwt");
 
 //회원탈퇴
-router.delete("/", async (req, res) => {
-    const userIdx = req.session.idx;
+router.delete("/", checkLogin, async (req, res) => {
+    const { token } = req.headers;
+    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        permission(userIdx);
-
         await psql.query(`
             DELETE FROM backend.user
             WHERE idx=$1
-        `, [userIdx]);
+        `, [jwtData.idx]);
 
         result.success = true;
         result.message = "회원탈퇴가 되었습니다.";
-        req.session.destroy();
+        // req.session.destroy();
     } catch (err) {
         result.message = err.message;
     } finally {
+
         res.send(result);
     }
 });

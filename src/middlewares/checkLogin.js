@@ -9,8 +9,8 @@ const checkLogin = (req, res, next) => {
     }
 
     try {
-        jwt.verify(token, process.env.TOKEN_SECRET_KEY);
-
+        const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
+        console.log(jwtData);
         next();
     } catch (err) {
         if (err.message === "jwt must be provided") {

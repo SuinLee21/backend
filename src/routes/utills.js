@@ -5,8 +5,12 @@ const requestIp = require('request-ip');
 const psql = require("../../database/connect/postgre");
 const mariadb = require("../../database/connect/mariadb");
 const connectMongoDB = require("../../database/connect/mongodb");
+
 const checkValidity = require("../middlewares/checkValidity");
+const checkLogin = require("../middlewares/checkValidity");
+
 const permission = require("../modules/permission");
+const logJwt = require("../modules/logJwt");
 
 router.get('/', async (req, res) => {
     const result = {
@@ -69,19 +73,16 @@ router.post("/login", checkValidity, async (req, res) => {
                 "iss": userId,
                 "idx": userData.rows[0].idx,
                 "name": userData.rows[0].name,
-                "api": "login",
-                "userIp": requestIp.getClientIp(req),
-                // "reqq": req
             },
             process.env.TOKEN_SECRET_KEY,
             {
                 "expiresIn": "5m"
             }
         )
-
         result.success = true;
         result.message = "로그인 성공.";
         result.data.token = token;
+        logJwt(token, requestIp.getClientIp(req), "POST/login", req.body, result);
     } catch (err) {
         console.log(err.message);
         result.message = err.message;
@@ -114,18 +115,17 @@ router.post("/signup", checkValidity, async (req, res) => {
 });
 
 //로그아웃
-router.get("/logout", (req, res) => {
+router.get("/logout", checkLogin, (req, res) => {
+    const { token } = req.headers;
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        permission(req.session.idx);
-
-        req.session.destroy();
         result.success = true;
         result.message = "로그아웃 되었습니다.";
+        logJwt(token, requestIp.getClientIp(req), "GET/logout", req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -192,8 +192,9 @@ router.post("/users-pw", checkValidity, async (req, res) => {
 });
 
 //알림 불러오기
-router.get("/notifs", async (req, res) => {
-    const userIdx = parseInt(req.session.idx);
+router.get("/notifs", checkLogin, async (req, res) => {
+    const { token } = req.headers;
+    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
     const result = {
         "success": false,
         "message": "",
@@ -201,19 +202,18 @@ router.get("/notifs", async (req, res) => {
     }
 
     try {
-        permission(userIdx);
-
         const db = await connectMongoDB();
 
         const notifData = await db.collection("notif").find(
             {
-                "receiver_idx": userIdx
+                "receiver_idx": jwtData.idx
             }
-        ).toArray().sort({ "created_at": -1 });
+        ).sort({ "created_at": -1 }).toArray();
 
         result.success = true;
         result.message = "정상적으로 알림들을 불러왔습니다.";
         result.data = notifData;
+        logJwt(token, requestIp.getClientIp(req), "GET/logout", req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
