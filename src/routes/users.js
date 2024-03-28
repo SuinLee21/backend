@@ -1,4 +1,6 @@
 const router = require("express").Router();
+const jwt = require("jsonwebtoken");
+const requestIp = require('request-ip');
 
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
@@ -26,18 +28,19 @@ router.delete("/", checkLogin, async (req, res) => {
 
         result.success = true;
         result.message = "회원탈퇴가 되었습니다.";
+        logJwt(token, requestIp.getClientIp(req), "DELETE/users", req.body, result)
         // req.session.destroy();
     } catch (err) {
         result.message = err.message;
     } finally {
-
         res.send(result);
     }
 });
 
 //특정 유저 정보 보기
-router.get("/", async (req, res) => {
-    const userIdx = req.session.idx;
+router.get("/", checkLogin, async (req, res) => {
+    const { token } = req.headers;
+    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
     const result = {
         "success": false,
         "message": "",
@@ -45,12 +48,10 @@ router.get("/", async (req, res) => {
     };
 
     try {
-        permission(userIdx);
-
         const userData = await psql.query(`
             SELECT * FROM backend.user
             WHERE idx=$1
-        `, [userIdx]);
+        `, [jwtData.idx]);
 
         if (userData.rows.length === 0) {
             throw new Error('존재하지 않는 정보입니다.');
@@ -59,6 +60,7 @@ router.get("/", async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = userData.rows;
+        logJwt(token, requestIp.getClientIp(req), "GET/users", req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -67,7 +69,7 @@ router.get("/", async (req, res) => {
 });
 
 //유저 정보 보기
-router.get("/:idx", async (req, res) => {
+router.get("/:idx", checkLogin, async (req, res) => {
     const userIdx = req.params.idx;
     const result = {
         "success": false,
@@ -76,8 +78,6 @@ router.get("/:idx", async (req, res) => {
     };
 
     try {
-        permission(userIdx);
-
         const userData = await psql.query(`
             SELECT id, name, phone_num FROM backend.user
             WHERE idx=$1
@@ -90,6 +90,7 @@ router.get("/:idx", async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = userData.rows;
+        logJwt(token, requestIp.getClientIp(req), `GET/users/${userIdx}`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -98,24 +99,40 @@ router.get("/:idx", async (req, res) => {
 });
 
 //특정 유저 정보 수정
-router.put("/", checkValidity, async (req, res) => {
+router.put("/", checkLogin, checkValidity, async (req, res) => {
     const { userPw, userName, userPhoneNum } = req.body;
-    const userIdx = req.session.idx;
+    let { token } = req.headers;
+    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
     const result = {
         "success": false,
-        "message": ""
+        "message": "",
+        "data": {
+            "token": ""
+        }
     };
 
     try {
-        permission(userIdx);
-
         await psql.query(`
             UPDATE backend.user SET pw=$1, name=$2, phone_num=$3
             WHERE idx=$4
-        `, [userPw, userName, userPhoneNum, userIdx]);
+        `, [userPw, userName, userPhoneNum, jwtData.idx]);
+
+        token = jwt.sign(
+            {
+                "iss": jwtData.iss,
+                "idx": jwtData.idx,
+                "name": userName,
+            },
+            process.env.TOKEN_SECRET_KEY,
+            {
+                "expiresIn": "5m"
+            }
+        )
 
         result.success = true;
         result.message = "내 정보가 수정되었습니다.";
+        result.data.token = token;
+        logJwt(token, requestIp.getClientIp(req), "PUT/users", req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {

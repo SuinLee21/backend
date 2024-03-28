@@ -7,7 +7,7 @@ const mariadb = require("../../database/connect/mariadb");
 const connectMongoDB = require("../../database/connect/mongodb");
 
 const checkValidity = require("../middlewares/checkValidity");
-const checkLogin = require("../middlewares/checkValidity");
+const checkLogin = require("../middlewares/checkLogin");
 
 const permission = require("../modules/permission");
 const logJwt = require("../modules/logJwt");

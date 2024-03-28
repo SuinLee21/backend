@@ -4,23 +4,25 @@ const requestIp = require('request-ip');
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
 const connectMongoDB = require("../../database/connect/mongodb");
+
+const checkLogin = require("../middlewares/checkLogin");
+
 const permission = require("../modules/permission");
 const getCurrentDate = require("../modules/getCurrentDate");
-const checkLogin = require("../middlewares/checkLogin");
 const logJwt = require("../modules/logJwt");
 
 //게시글 작성
-router.post("/", async (req, res) => {
+router.post("/", checkLogin, async (req, res) => {
     const { title, contents, categoryIdx } = req.body;
-    const userIdx = req.session.idx;
+    const { token } = req.headers;
+    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
+    const userIdx = jwtData.idx;
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        permission(userIdx);
-
         await psql.query(`
             INSERT INTO backend.post(user_idx, category_idx, title, contents, like_count)
             VALUES($1, $2, $3, $4, 0)
@@ -51,7 +53,7 @@ router.post("/", async (req, res) => {
             await db.collection("notif").insertOne(
                 {
                     "post_idx": postCount,
-                    "sender_name": req.session.userName,
+                    "sender_name": jwtData.name,
                     "receiver_idx": userIdxList.rows[i].idx,
                     "type": "newPost",
                     "created_at": getCurrentDate()
@@ -61,6 +63,7 @@ router.post("/", async (req, res) => {
 
         result.success = true;
         result.message = "게시글이 작성되었습니다.";
+        logJwt(token, requestIp.getClientIp(req), "POST/posts", req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -78,8 +81,6 @@ router.get('/', checkLogin, async (req, res) => {
     }
 
     try {
-        // permission(req.session.idx);
-
         const postData = await psql.query(`
             SELECT * FROM backend.post
         `);
@@ -92,7 +93,7 @@ router.get('/', checkLogin, async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = postData.rows;
-        await logJwt(db, token, requestIp.getClientIp(req), "GET/posts", 1, result);
+        await logJwt(token, requestIp.getClientIp(req), "GET/posts", req.body, result);
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -101,7 +102,8 @@ router.get('/', checkLogin, async (req, res) => {
 })
 
 //특정 게시글 읽기
-router.get("/:idx", async (req, res) => {
+router.get("/:idx", checkLogin, async (req, res) => {
+    const { token } = req.headers;
     const postIdx = req.params.idx;
     const result = {
         "success": false,
@@ -110,8 +112,6 @@ router.get("/:idx", async (req, res) => {
     };
 
     try {
-        permission(req.session.idx);
-
         const postData = await psql.query(`
             SELECT * FROM backend.post
             WHERE idx=$1
@@ -124,6 +124,7 @@ router.get("/:idx", async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = postData.rows;
+        logJwt(token, requestIp.getClientIp(req), `GET/posts/${postIdx}`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -132,8 +133,9 @@ router.get("/:idx", async (req, res) => {
 })
 
 //특정 카테고리 게시글 전체 읽기
-router.get("/category/:idx", async (req, res) => {
+router.get("/category/:idx", checkLogin, async (req, res) => {
     const categoryIdx = req.params.idx;
+    const { token } = req.headers;
     const result = {
         "success": false,
         "message": "",
@@ -141,8 +143,6 @@ router.get("/category/:idx", async (req, res) => {
     };
 
     try {
-        permission(req.session.idx);
-
         const postData = await psql.query(`
             SELECT * FROM backend.post
             WHERE category_idx=$1
@@ -155,6 +155,7 @@ router.get("/category/:idx", async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = postData.rows;
+        logJwt(token, requestIp.getClientIp(req), `GET/posts/category/${categoryIdx}`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -163,7 +164,7 @@ router.get("/category/:idx", async (req, res) => {
 })
 
 //특정 게시글 댓글 읽기
-router.get('/:idx/comments', async (req, res) => {
+router.get('/:idx/comments', checkLogin, async (req, res) => {
     const postIdx = parseInt(req.params.idx);
     const result = {
         "success": false,
@@ -172,8 +173,6 @@ router.get('/:idx/comments', async (req, res) => {
     }
 
     try {
-        permission(req.session.idx);
-
         const db = await connectMongoDB();
 
         const commentData = await db.collection("comment").findOne(
@@ -185,6 +184,7 @@ router.get('/:idx/comments', async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = commentData;
+        logJwt(token, requestIp.getClientIp(req), `GET/posts/${postIdx}/comments`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -193,9 +193,11 @@ router.get('/:idx/comments', async (req, res) => {
 })
 
 //게시글 수정
-router.put("/:idx", async (req, res) => {
+router.put("/:idx", checkLogin, async (req, res) => {
     const { title, contents, categoryIdx } = req.body;
-    const userIdx = req.session.idx;
+    const { token } = req.headers;
+    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
+    const userIdx = jwtData.idx;
     const postIdx = req.params.idx;
     const result = {
         "success": false,
@@ -203,8 +205,6 @@ router.put("/:idx", async (req, res) => {
     };
 
     try {
-        permission(userIdx);
-
         await psql.query(`
             UPDATE backend.post
             SET category_idx=$1, title=$2, contents=$3
@@ -213,6 +213,7 @@ router.put("/:idx", async (req, res) => {
 
         result.success = true;
         result.message = "게시글이 수정되었습니다.";
+        logJwt(token, requestIp.getClientIp(req), `PUT/posts/${postIdx}`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -221,8 +222,10 @@ router.put("/:idx", async (req, res) => {
 })
 
 //게시글 삭제
-router.delete("/:idx", async (req, res) => {
-    const userIdx = req.session.idx;
+router.delete("/:idx", checkLogin, async (req, res) => {
+    const { token } = req.headers;
+    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
+    const userIdx = jwtData.idx;
     const postIdx = parseInt(req.params.idx);
     const result = {
         "success": false,
@@ -230,8 +233,6 @@ router.delete("/:idx", async (req, res) => {
     };
 
     try {
-        permission(userIdx);
-
         const db = await connectMongoDB();
         await db.collection("comment").deleteOne(
             {
@@ -246,6 +247,7 @@ router.delete("/:idx", async (req, res) => {
 
         result.success = true;
         result.message = "게시글이 삭제되었습니다.";
+        logJwt(token, requestIp.getClientIp(req), `DELETE/posts/${postIdx}`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -254,17 +256,17 @@ router.delete("/:idx", async (req, res) => {
 })
 
 //특정 게시글 좋아요
-router.post("/like", async (req, res) => {
+router.post("/like", checkLogin, async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
-    const userIdx = parseInt(req.session.idx);
+    const { token } = req.headers;
+    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
+    const userIdx = jwtData.idx;
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        permission(userIdx);
-
         const db = await connectMongoDB();
 
         // 이미 좋아요가 눌려져 있는지 확인
@@ -301,7 +303,7 @@ router.post("/like", async (req, res) => {
             {
                 "post_idx": postIdx,
                 "sender_idx": userIdx,
-                "sender_name": req.session.userName,
+                "sender_name": jwtData.name,
                 "receiver_idx": posterIdx.rows[0].user_idx,
                 "type": "postLike",
                 "created_at": getCurrentDate()
@@ -310,6 +312,7 @@ router.post("/like", async (req, res) => {
 
         result.success = true;
         result.message = "좋아요, 업데이트 정상 작동.";
+        logJwt(token, requestIp.getClientIp(req), "POST/posts/like", req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
@@ -318,8 +321,10 @@ router.post("/like", async (req, res) => {
 })
 
 //좋아요 취소
-router.delete("/:idx/like", async (req, res) => {
-    const userIdx = parseInt(req.session.idx);
+router.delete("/:idx/like", checkLogin, async (req, res) => {
+    const { token } = req.headers;
+    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
+    const userIdx = jwtData.idx;
     const postIdx = parseInt(req.params.idx);
     const result = {
         "success": false,
@@ -327,8 +332,6 @@ router.delete("/:idx/like", async (req, res) => {
     };
 
     try {
-        permission(userIdx);
-
         const db = await connectMongoDB();
 
         await psql.query(`
@@ -354,6 +357,7 @@ router.delete("/:idx/like", async (req, res) => {
 
         result.success = true;
         result.message = "좋아요가 취소되었습니다.";
+        logJwt(token, requestIp.getClientIp(req), `DELETE/posts/${postIdx}/like`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {

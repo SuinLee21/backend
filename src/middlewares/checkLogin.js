@@ -2,7 +2,8 @@ const jwt = require("jsonwebtoken");
 require('dotenv').config();
 
 const checkLogin = (req, res, next) => {
-    const { token } = req.headers;
+    // const { token } = req.headers;
+    const token = null;
     const result = {
         "success": false,
         "message": ""
@@ -13,6 +14,7 @@ const checkLogin = (req, res, next) => {
         console.log(jwtData);
         next();
     } catch (err) {
+        console.log("err는 : " + err);
         if (err.message === "jwt must be provided") {
             result.message = "로그인이 필요합니다.";
         } else if (err.message === "jwt expired") {
