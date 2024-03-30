@@ -77,10 +77,10 @@ router.post("/", checkLogin, async (req, res) => {
 
         result.success = true;
         result.message = "댓글이 작성되었습니다.";
-        logJwt(token, requestIp.getClientIp(req), "POST/comments", req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), "POST/comments", req.body, result)
         res.send(result);
     }
 })
@@ -124,10 +124,10 @@ router.put("/:idx", checkLogin, async (req, res) => {
 
         result.success = true;
         result.message = "댓글이 수정되었습니다.";
-        logJwt(token, requestIp.getClientIp(req), `PUT/comments/${commentIdx}`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), `PUT/comments/${commentIdx}`, req.body, result)
         res.send(result);
     }
 })
@@ -171,10 +171,10 @@ router.delete("/:idx", checkLogin, async (req, res) => {
 
         result.success = true;
         result.message = "댓글이 삭제되었습니다.";
-        logJwt(token, requestIp.getClientIp(req), `DELETE/comments/${commentIdx}`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), `DELETE/comments/${commentIdx}`, req.body, result)
         res.send(result);
     }
 })
@@ -232,10 +232,10 @@ router.post("/like", checkLogin, async (req, res) => {
 
         result.success = true;
         result.message = "좋아요, 업데이트 정상 작동.";
-        logJwt(token, requestIp.getClientIp(req), "POST/comments/like", req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), "POST/comments/like", req.body, result)
         res.send(result);
     }
 })
@@ -294,10 +294,10 @@ router.delete("/:idx/like", checkLogin, async (req, res) => {
 
         result.success = true;
         result.message = "좋아요 취소, 업데이트 완료.";
-        logJwt(token, requestIp.getClientIp(req), `DELETE/comments/${commentIdx}/like`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), `DELETE/comments/${commentIdx}/like`, req.body, result)
         res.send(result);
     }
 })

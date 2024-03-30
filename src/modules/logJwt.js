@@ -22,6 +22,7 @@ const logJwt = async (token, userIp, api, reqBody, result) => {
 
         db.collection("logging").insertOne(obj);
     } catch (err) {
+        //login api에서 예외 처리
         if (err.message === "jwt must be provided") {
             obj.iss = "Not a user";
             db.collection("logging").insertOne(obj);

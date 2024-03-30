@@ -63,10 +63,10 @@ router.post("/", checkLogin, async (req, res) => {
 
         result.success = true;
         result.message = "게시글이 작성되었습니다.";
-        logJwt(token, requestIp.getClientIp(req), "POST/posts", req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), "POST/posts", req.body, result)
         res.send(result);
     }
 })
@@ -93,10 +93,10 @@ router.get('/', checkLogin, async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = postData.rows;
-        await logJwt(token, requestIp.getClientIp(req), "GET/posts", req.body, result);
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), "GET/posts", req.body, result);
         res.send(result);
     }
 })
@@ -124,10 +124,10 @@ router.get("/:idx", checkLogin, async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = postData.rows;
-        logJwt(token, requestIp.getClientIp(req), `GET/posts/${postIdx}`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), `GET/posts/${postIdx}`, req.body, result)
         res.send(result);
     }
 })
@@ -155,10 +155,10 @@ router.get("/category/:idx", checkLogin, async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = postData.rows;
-        logJwt(token, requestIp.getClientIp(req), `GET/posts/category/${categoryIdx}`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), `GET/posts/category/${categoryIdx}`, req.body, result)
         res.send(result);
     }
 })
@@ -166,6 +166,7 @@ router.get("/category/:idx", checkLogin, async (req, res) => {
 //특정 게시글 댓글 읽기
 router.get('/:idx/comments', checkLogin, async (req, res) => {
     const postIdx = parseInt(req.params.idx);
+    const { token } = req.headers;
     const result = {
         "success": false,
         "message": "",
@@ -184,10 +185,10 @@ router.get('/:idx/comments', checkLogin, async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = commentData;
-        logJwt(token, requestIp.getClientIp(req), `GET/posts/${postIdx}/comments`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), `GET/posts/${postIdx}/comments`, req.body, result)
         res.send(result);
     }
 })
@@ -213,10 +214,10 @@ router.put("/:idx", checkLogin, async (req, res) => {
 
         result.success = true;
         result.message = "게시글이 수정되었습니다.";
-        logJwt(token, requestIp.getClientIp(req), `PUT/posts/${postIdx}`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), `PUT/posts/${postIdx}`, req.body, result)
         res.send(result);
     }
 })
@@ -247,10 +248,10 @@ router.delete("/:idx", checkLogin, async (req, res) => {
 
         result.success = true;
         result.message = "게시글이 삭제되었습니다.";
-        logJwt(token, requestIp.getClientIp(req), `DELETE/posts/${postIdx}`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), `DELETE/posts/${postIdx}`, req.body, result)
         res.send(result);
     }
 })
@@ -312,10 +313,10 @@ router.post("/like", checkLogin, async (req, res) => {
 
         result.success = true;
         result.message = "좋아요, 업데이트 정상 작동.";
-        logJwt(token, requestIp.getClientIp(req), "POST/posts/like", req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), "POST/posts/like", req.body, result)
         res.send(result);
     }
 })
@@ -357,10 +358,10 @@ router.delete("/:idx/like", checkLogin, async (req, res) => {
 
         result.success = true;
         result.message = "좋아요가 취소되었습니다.";
-        logJwt(token, requestIp.getClientIp(req), `DELETE/posts/${postIdx}/like`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), `DELETE/posts/${postIdx}/like`, req.body, result)
         res.send(result);
     }
 })

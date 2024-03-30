@@ -13,11 +13,14 @@ const logJwt = require("../modules/logJwt");
 
 //회원탈퇴
 router.delete("/", checkLogin, async (req, res) => {
-    const { token } = req.headers;
+    let { token } = req.headers;
     const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
     const result = {
         "success": false,
-        "message": ""
+        "message": "",
+        "data": {
+            "token": ""
+        }
     };
 
     try {
@@ -26,13 +29,25 @@ router.delete("/", checkLogin, async (req, res) => {
             WHERE idx=$1
         `, [jwtData.idx]);
 
+        token = jwt.sign(
+            {
+                "iss": jwtData.iss,
+                "idx": jwtData.idx,
+                "name": jwtData.name
+            },
+            process.env.TOKEN_SECRET_KEY,
+            {
+                "expiresIn": 1
+            }
+        )
+
         result.success = true;
         result.message = "회원탈퇴가 되었습니다.";
-        logJwt(token, requestIp.getClientIp(req), "DELETE/users", req.body, result)
         // req.session.destroy();
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), "DELETE/users", req.body, result)
         res.send(result);
     }
 });
@@ -60,16 +75,17 @@ router.get("/", checkLogin, async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = userData.rows;
-        logJwt(token, requestIp.getClientIp(req), "GET/users", req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), "GET/users", req.body, result)
         res.send(result);
     }
 });
 
 //유저 정보 보기
 router.get("/:idx", checkLogin, async (req, res) => {
+    const { token } = req.headers;
     const userIdx = req.params.idx;
     const result = {
         "success": false,
@@ -90,10 +106,10 @@ router.get("/:idx", checkLogin, async (req, res) => {
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
         result.data = userData.rows;
-        logJwt(token, requestIp.getClientIp(req), `GET/users/${userIdx}`, req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), `GET/users/${userIdx}`, req.body, result)
         res.send(result);
     }
 });
@@ -132,10 +148,10 @@ router.put("/", checkLogin, checkValidity, async (req, res) => {
         result.success = true;
         result.message = "내 정보가 수정되었습니다.";
         result.data.token = token;
-        logJwt(token, requestIp.getClientIp(req), "PUT/users", req.body, result)
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), "PUT/users", req.body, result)
         res.send(result);
     }
 })

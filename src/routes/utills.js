@@ -8,6 +8,7 @@ const connectMongoDB = require("../../database/connect/mongodb");
 
 const checkValidity = require("../middlewares/checkValidity");
 const checkLogin = require("../middlewares/checkLogin");
+const checkAdmin = require("../middlewares/checkAdmin");
 
 const permission = require("../modules/permission");
 const logJwt = require("../modules/logJwt");
@@ -22,6 +23,7 @@ router.post("/login", checkValidity, async (req, res) => {
             "token": ""
         }
     };
+    let isAdmin = false;
     let token = null;
 
     try {
@@ -34,11 +36,21 @@ router.post("/login", checkValidity, async (req, res) => {
             throw new Error('회원정보가 일치하지 않습니다.');
         }
 
+        const adminData = await psql.query(`
+            SELECT * FROM backend.admin
+            WHERE user_idx=$1
+        `, [userData.rows[0].idx]);
+
+        if (adminData.rows.length !== 0) {
+            isAdmin = true;
+        }
+
         token = jwt.sign(
             {
                 "iss": userId,
                 "idx": userData.rows[0].idx,
                 "name": userData.rows[0].name,
+                "admin": isAdmin
             },
             process.env.TOKEN_SECRET_KEY,
             {
@@ -82,19 +94,36 @@ router.post("/signup", checkValidity, async (req, res) => {
 
 //로그아웃
 router.get("/logout", checkLogin, (req, res) => {
-    const { token } = req.headers;
+    let { token } = req.headers;
+    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
     const result = {
         "success": false,
-        "message": ""
+        "message": "",
+        "data": {
+            "token": ""
+        }
     };
 
     try {
+        token = jwt.sign(
+            {
+                "iss": jwtData.iss,
+                "idx": jwtData.idx,
+                "name": jwtData.name
+            },
+            process.env.TOKEN_SECRET_KEY,
+            {
+                "expiresIn": 1
+            }
+        )
+
         result.success = true;
         result.message = "로그아웃 되었습니다.";
-        logJwt(token, requestIp.getClientIp(req), "GET/logout", req.body, result)
+        result.data.token = token;
     } catch (err) {
         result.message = err.message;
     } finally {
+        logJwt(token, requestIp.getClientIp(req), "GET/logout", req.body, result)
         res.send(result);
     }
 });
@@ -179,7 +208,29 @@ router.get("/notifs", checkLogin, async (req, res) => {
         result.success = true;
         result.message = "정상적으로 알림들을 불러왔습니다.";
         result.data = notifData;
+    } catch (err) {
+        result.message = err.message;
+    } finally {
         logJwt(token, requestIp.getClientIp(req), "GET/logout", req.body, result)
+        res.send(result);
+    }
+})
+
+router.get("/logging", checkAdmin, async (req, res) => {
+    const result = {
+        "success": false,
+        "message": "",
+        "data": null
+    }
+
+    try {
+        const db = await connectMongoDB();
+
+        const loggingData = await db.collection("logging").find().sort({ "request_time": -1 }).toArray();
+
+        result.success = true;
+        result.message = "정상적으로 로깅들을 불러왔습니다.";
+        result.data = loggingData;
     } catch (err) {
         result.message = err.message;
     } finally {
