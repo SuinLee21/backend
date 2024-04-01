@@ -1,4 +1,6 @@
 const router = require("express").Router();
+const jwt = require("jsonwebtoken");
+const requestIp = require("request-ip");
 
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");

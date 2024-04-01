@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken");
-require('dotenv').config();
 
 const checkAdmin = (req, res, next) => {
     const { token } = req.headers;

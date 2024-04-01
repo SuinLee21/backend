@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const jwt = require("jsonwebtoken");
 const requestIp = require('request-ip');
 
 const psql = require("../../database/connect/postgre");
@@ -39,7 +40,8 @@ router.post("/", checkLogin, async (req, res) => {
         await db.collection("comment").insertOne(
             {
                 "post_idx": postCount,
-                "comment": {}
+                "comment": {},
+                "created_at": getCurrentDate()
             }
         )
 
@@ -84,7 +86,6 @@ router.get('/', checkLogin, async (req, res) => {
         const postData = await psql.query(`
             SELECT * FROM backend.post
         `);
-        const db = await connectMongoDB();
 
         if (postData.rows.length === 0) {
             throw new Error('게시글이 존재하지 않습니다.');

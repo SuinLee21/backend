@@ -43,7 +43,7 @@ router.delete("/", checkLogin, async (req, res) => {
 
         result.success = true;
         result.message = "회원탈퇴가 되었습니다.";
-        // req.session.destroy();
+        result.data.token = token;
     } catch (err) {
         result.message = err.message;
     } finally {

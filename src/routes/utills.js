@@ -54,7 +54,7 @@ router.post("/login", checkValidity, async (req, res) => {
             },
             process.env.TOKEN_SECRET_KEY,
             {
-                "expiresIn": "5m"
+                "expiresIn": "25m"
             }
         )
         result.success = true;
@@ -216,7 +216,8 @@ router.get("/notifs", checkLogin, async (req, res) => {
     }
 })
 
-router.get("/logging", checkAdmin, async (req, res) => {
+//관리자 권한으로 logging 보기
+router.get("/logging", checkLogin("admin"), async (req, res) => {
     const result = {
         "success": false,
         "message": "",
