@@ -36,14 +36,7 @@ router.post("/login", checkValidity, async (req, res) => {
             throw new Error('회원정보가 일치하지 않습니다.');
         }
 
-        const adminData = await psql.query(`
-            SELECT * FROM backend.admin
-            WHERE user_idx=$1
-        `, [userData.rows[0].idx]);
-
-        if (adminData.rows.length !== 0) {
-            isAdmin = true;
-        }
+        isAdmin = userData.rows[0].is_admin;
 
         token = jwt.sign(
             {

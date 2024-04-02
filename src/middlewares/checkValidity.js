@@ -4,7 +4,7 @@ const checkValidity = (req, res, next) => {
     const regexName = /^[가-힣]{2,10}$/ //한글만 2~10;
     const regexPhoneNum = /^010-\d{4}-\d{4}$/;
 
-    const { userId, userPw, userName, userPhoneNum } = Object.keys(req.body).length == 0 ? req.query : req.body;
+    const { userId, userPw, userName, userPhoneNum, title, contents } = Object.keys(req.body).length == 0 ? req.query : req.body;
     const result = {
         "message": ""
     };
@@ -32,6 +32,12 @@ const checkValidity = (req, res, next) => {
             result.message = "전화번호를 다시 입력해주세요";
             return res.status(404).send(result);
         }
+    }
+    if (title) {
+        title = title.replace(/\n|\r/g, '');
+    }
+    if (contents) {
+        contents = contents.replace(/\n|\r/g, '');
     }
     next();
 }

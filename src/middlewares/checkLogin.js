@@ -17,7 +17,6 @@ const checkLogin = (type = null) => {
 
             next();
         } catch (err) {
-            console.log("err는 : " + err);
             if (err.message === "jwt must be provided") {
                 result.message = "로그인이 필요합니다.";
             } else if (err.message === "jwt expired") {
