@@ -4,7 +4,8 @@ const checkValidity = (req, res, next) => {
     const regexName = /^[가-힣]{2,10}$/ //한글만 2~10;
     const regexPhoneNum = /^010-\d{4}-\d{4}$/;
 
-    const { userId, userPw, userName, userPhoneNum, title, contents } = Object.keys(req.body).length == 0 ? req.query : req.body;
+    const { userId, userPw, userName, userPhoneNum } = Object.keys(req.body).length == 0 ? req.query : req.body;
+    let { title, contents } = req.body;
     const result = {
         "success": false,
         "message": ""
@@ -36,6 +37,7 @@ const checkValidity = (req, res, next) => {
     }
     if (title) {
         title = title.replace(/\n|\r/g, '');
+        console.log(title);
     }
     if (contents) {
         contents = contents.replace(/\n|\r/g, '');

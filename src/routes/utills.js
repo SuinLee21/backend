@@ -68,7 +68,7 @@ router.post("/login", checkValidity, async (req, res) => {
 
 //회원가입
 router.post("/signup", checkValidity, async (req, res) => {
-    const { userId, userPw, userName, userPhoneNum } = req.body;
+    const { userId, userPw, userName, userPhoneNum, isAdmin } = req.body;
     const result = {
         "success": false,
         "message": ""
@@ -76,9 +76,9 @@ router.post("/signup", checkValidity, async (req, res) => {
 
     try {
         await psql.query(`
-            INSERT INTO backend.user(id, pw, name, phone_num)
-            VALUES($1, $2, $3, $4)
-        `, [userId, userPw, userName, userPhoneNum]);
+            INSERT INTO backend.user(id, pw, name, phone_num, is_admin)
+            VALUES($1, $2, $3, $4, $5)
+        `, [userId, userPw, userName, userPhoneNum, isAdmin]);
 
         result.success = true;
         result.message = "정상적으로 가입되었습니다.";
@@ -90,7 +90,7 @@ router.post("/signup", checkValidity, async (req, res) => {
 });
 
 //로그아웃
-router.get("/logout", checkAuth, (req, res) => {
+router.get("/logout", checkAuth(), (req, res) => {
     let { token } = req.headers;
     const result = {
         "success": false,
@@ -183,8 +183,7 @@ router.post("/users-pw", checkValidity, async (req, res) => {
 });
 
 //알림 불러오기
-router.get("/notifs", checkAuth, async (req, res) => {
-    const { token } = req.headers;
+router.get("/notifs", checkAuth(), async (req, res) => {
     const result = {
         "success": false,
         "message": "",
@@ -216,7 +215,7 @@ router.get("/logging", checkAuth("admin"), async (req, res) => {
     const result = {
         "success": false,
         "message": "",
-        "data": null
+        "data": []
     }
     req.api = "GET/logging";
 

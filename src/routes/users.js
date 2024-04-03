@@ -10,7 +10,7 @@ const checkValidity = require("../middlewares/checkValidity");
 const permission = require("../modules/permission");
 
 //회원탈퇴
-router.delete("/", checkAuth, async (req, res) => {
+router.delete("/", checkAuth(), async (req, res) => {
     let { token } = req.headers;
     const result = {
         "success": false,
@@ -50,7 +50,7 @@ router.delete("/", checkAuth, async (req, res) => {
 });
 
 //특정 유저 정보 보기
-router.get("/", checkAuth, async (req, res) => {
+router.get("/", checkAuth(), async (req, res) => {
     const result = {
         "success": false,
         "message": "",
@@ -79,7 +79,7 @@ router.get("/", checkAuth, async (req, res) => {
 });
 
 //유저 정보 보기
-router.get("/:idx", checkAuth, async (req, res) => {
+router.get("/:idx", checkAuth(), async (req, res) => {
     const userIdx = req.params.idx;
     const result = {
         "success": false,
@@ -109,7 +109,7 @@ router.get("/:idx", checkAuth, async (req, res) => {
 });
 
 //특정 유저 정보 수정
-router.put("/", checkAuth, checkValidity, async (req, res) => {
+router.put("/", checkAuth(), checkValidity, async (req, res) => {
     const { userPw, userName, userPhoneNum } = req.body;
     let { token } = req.headers;
     const result = {

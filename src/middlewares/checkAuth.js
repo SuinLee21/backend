@@ -19,7 +19,7 @@ const checkAuth = (type = null) => {
                 throw new Error('관리자만이 접근할 수 있습니다.');
             }
 
-            next();
+            return next();
         } catch (err) {
             if (err.message === "jwt must be provided") {
                 result.message = "로그인이 필요합니다.";

@@ -11,7 +11,7 @@ const permission = require("../modules/permission");
 const getCurrentDate = require("../modules/getCurrentDate");
 
 //게시글 작성
-router.post("/", checkAuth, checkValidity, async (req, res) => {
+router.post("/", checkAuth(), checkValidity, async (req, res) => {
     const { title, contents, categoryIdx } = req.body;
     const userIdx = req.idx;
     const result = {
@@ -19,6 +19,7 @@ router.post("/", checkAuth, checkValidity, async (req, res) => {
         "message": ""
     };
     req.api = "POST/posts";
+    console.log(title);
 
     try {
         await psql.query(`
@@ -70,7 +71,7 @@ router.post("/", checkAuth, checkValidity, async (req, res) => {
 })
 
 //모든 게시글 읽기
-router.get('/', checkAuth, async (req, res) => {
+router.get('/', checkAuth(), async (req, res) => {
     const result = {
         "success": false,
         "message": "",
@@ -98,7 +99,7 @@ router.get('/', checkAuth, async (req, res) => {
 })
 
 //특정 게시글 읽기
-router.get("/:idx", checkAuth, async (req, res) => {
+router.get("/:idx", checkAuth(), async (req, res) => {
     const postIdx = req.params.idx;
     const result = {
         "success": false,
@@ -128,7 +129,7 @@ router.get("/:idx", checkAuth, async (req, res) => {
 })
 
 //특정 카테고리 게시글 전체 읽기
-router.get("/category/:idx", checkAuth, async (req, res) => {
+router.get("/category/:idx", checkAuth(), async (req, res) => {
     const categoryIdx = req.params.idx;
     const result = {
         "success": false,
@@ -158,7 +159,7 @@ router.get("/category/:idx", checkAuth, async (req, res) => {
 })
 
 //특정 게시글 댓글 읽기
-router.get('/:idx/comments', checkAuth, async (req, res) => {
+router.get('/:idx/comments', checkAuth(), async (req, res) => {
     const postIdx = parseInt(req.params.idx);
     const result = {
         "success": false,
@@ -187,7 +188,7 @@ router.get('/:idx/comments', checkAuth, async (req, res) => {
 })
 
 //게시글 수정
-router.put("/:idx", checkAuth, checkValidity, async (req, res) => {
+router.put("/:idx", checkAuth(), checkValidity, async (req, res) => {
     const { title, contents, categoryIdx } = req.body;
     const userIdx = req.idx;
     const postIdx = req.params.idx;
@@ -214,7 +215,7 @@ router.put("/:idx", checkAuth, checkValidity, async (req, res) => {
 })
 
 //게시글 삭제
-router.delete("/:idx", checkAuth, async (req, res) => {
+router.delete("/:idx", checkAuth(), async (req, res) => {
     const userIdx = req.idx;
     const postIdx = parseInt(req.params.idx);
     const result = {
@@ -246,7 +247,7 @@ router.delete("/:idx", checkAuth, async (req, res) => {
 })
 
 //특정 게시글 좋아요
-router.post("/like", checkAuth, async (req, res) => {
+router.post("/like", checkAuth(), async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
     const userIdx = req.idx;
     const result = {
@@ -309,7 +310,7 @@ router.post("/like", checkAuth, async (req, res) => {
 })
 
 //좋아요 취소
-router.delete("/:idx/like", checkAuth, async (req, res) => {
+router.delete("/:idx/like", checkAuth(), async (req, res) => {
     const userIdx = req.idx;
     const postIdx = parseInt(req.params.idx);
     const result = {

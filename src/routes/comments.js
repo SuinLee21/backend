@@ -5,14 +5,14 @@ const psql = require("../../database/connect/postgre");
 const connectMongoDB = require("../../database/connect/mongodb");
 
 const checkAuth = require("../middlewares/checkAuth");
-const checkValidity = require("../middlewares/checkAuth");
+const checkValidity = require("../middlewares/checkValidity");
 
 const permission = require("../modules/permission");
 const getCurrentDate = require("../modules/getCurrentDate");
 const updateComment = require("../modules/updateComment");
 
 //댓글 작성
-router.post("/", checkAuth, checkValidity, async (req, res) => {
+router.post("/", checkAuth(), checkValidity, async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
     const contents = req.body.contents;
     const commentIdxList = req.body.commentIdxList;
@@ -83,7 +83,7 @@ router.post("/", checkAuth, checkValidity, async (req, res) => {
 })
 
 //댓글 수정
-router.put("/:idx", checkAuth, checkValidity, async (req, res) => {
+router.put("/:idx", checkAuth(), checkValidity, async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
     const contents = req.body.contents;
     const commentIdxList = req.body.commentIdxList;
@@ -127,7 +127,7 @@ router.put("/:idx", checkAuth, checkValidity, async (req, res) => {
 })
 
 //댓글 삭제
-router.delete("/:idx", checkAuth, async (req, res) => {
+router.delete("/:idx", checkAuth(), async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
     const commentIdxList = req.body.commentIdxList;
 
@@ -171,7 +171,7 @@ router.delete("/:idx", checkAuth, async (req, res) => {
 })
 
 //특정 댓글 좋아요
-router.post("/like", checkAuth, async (req, res) => {
+router.post("/like", checkAuth(), async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
     const commentIdxList = req.body.commentIdxList; //수정하려는 idx도 list에 있다는 전제
 
@@ -198,14 +198,6 @@ router.post("/like", checkAuth, async (req, res) => {
             throw new Error("이미 좋아요가 눌러져 있습니다.");
         }
 
-        //댓글 좋아요
-        await db.collection("comment_like").insertOne(
-            {
-                "user_idx": userIdx,
-                "comment_idx": commentIdx
-            }
-        )
-
         result.message = "좋아요 정상 작동.";
 
         //댓글 좋아요 갯수 업데이트
@@ -215,9 +207,21 @@ router.post("/like", checkAuth, async (req, res) => {
             tempObj = tempObj.comment[commentIdxList[i]];
         }
 
+        if (tempObj.comment[commentIdx].contents === '삭제된 댓글입니다.') {
+            throw new Error('삭제된 댓글입니다.');
+        }
+
         tempObj.comment[commentIdx].like_count += 1;
 
         await updateComment(db, postIdx, commentData.comment);
+
+        //댓글 좋아요
+        await db.collection("comment_like").insertOne(
+            {
+                "user_idx": userIdx,
+                "comment_idx": commentIdx
+            }
+        )
 
         result.success = true;
         result.message = "좋아요, 업데이트 정상 작동.";
@@ -228,8 +232,8 @@ router.post("/like", checkAuth, async (req, res) => {
     }
 })
 
-//좋아요 취소 //pathparmeter??
-router.delete("/:idx/like", checkAuth, async (req, res) => {
+//좋아요 취소
+router.delete("/:idx/like", checkAuth(), async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
     const commentIdxList = req.body.commentIdxList; //삭제하려는 idx는 포함하지 않는다는 전제
 
