@@ -1,10 +1,15 @@
 const express = require("express");
 const session = require('express-session');
+const interceptor = require('express-interceptor');
+const requestIp = require('request-ip');
+const jwt = require('jsonwebtoken');
 
 const usersApi = require("./routes/users");
 const postsApi = require("./routes/posts");
 const commentsApi = require("./routes/comments");
 const utillsApi = require("./routes/utills");
+
+const logging = require("./modules/logging");
 
 // const mariadb = require("../database/connect/mariadb");
 // mariadb.connect();
@@ -15,7 +20,7 @@ pg.connect(err => {
     if (err) {
         console.log(err);
     }
-})
+});
 
 const app = express();
 const port = process.env.HTTP_PORT;
@@ -28,6 +33,17 @@ app.use(session({
     saveUninitialized: false,
     checkPeriod: maxAge
 }));
+
+app.use(interceptor((req, res) => ({
+    isInterceptable: () => true,
+    intercept: (body, send) => {
+        if (req.idx) {
+            console.log('logging');
+            logging(req.iss, requestIp.getClientIp(req), req.api, req.body, body);
+        }
+        send(body);
+    }
+})));
 
 app.use("/users", usersApi);
 app.use("/posts", postsApi);

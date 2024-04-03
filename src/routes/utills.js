@@ -1,17 +1,14 @@
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
-const requestIp = require('request-ip');
 
 const psql = require("../../database/connect/postgre");
 const mariadb = require("../../database/connect/mariadb");
 const connectMongoDB = require("../../database/connect/mongodb");
 
+const checkAuth = require("../middlewares/checkAuth");
 const checkValidity = require("../middlewares/checkValidity");
-const checkLogin = require("../middlewares/checkLogin");
-const checkAdmin = require("../middlewares/checkAdmin");
 
 const permission = require("../modules/permission");
-const logJwt = require("../modules/logJwt");
 
 //로그인
 router.post("/login", checkValidity, async (req, res) => {
@@ -25,6 +22,7 @@ router.post("/login", checkValidity, async (req, res) => {
     };
     let isAdmin = false;
     let token = null;
+    req.api = "POST/login";
 
     try {
         const userData = await psql.query(`
@@ -37,12 +35,14 @@ router.post("/login", checkValidity, async (req, res) => {
         }
 
         isAdmin = userData.rows[0].is_admin;
+        const userIdx = userData.rows[0].idx;
+        const userName = userData.rows[0].name;
 
         token = jwt.sign(
             {
                 "iss": userId,
-                "idx": userData.rows[0].idx,
-                "name": userData.rows[0].name,
+                "idx": userIdx,
+                "name": userName,
                 "admin": isAdmin
             },
             process.env.TOKEN_SECRET_KEY,
@@ -50,6 +50,11 @@ router.post("/login", checkValidity, async (req, res) => {
                 "expiresIn": "25m"
             }
         )
+
+        req.iss = userId;
+        req.idx = userIdx;
+        req.name = userName;
+
         result.success = true;
         result.message = "로그인 성공.";
         result.data.token = token;
@@ -57,7 +62,6 @@ router.post("/login", checkValidity, async (req, res) => {
         console.log(err.message);
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), "POST/login", req.body, result);
         res.send(result);
     }
 });
@@ -86,9 +90,8 @@ router.post("/signup", checkValidity, async (req, res) => {
 });
 
 //로그아웃
-router.get("/logout", checkLogin, (req, res) => {
+router.get("/logout", checkAuth, (req, res) => {
     let { token } = req.headers;
-    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
     const result = {
         "success": false,
         "message": "",
@@ -96,13 +99,14 @@ router.get("/logout", checkLogin, (req, res) => {
             "token": ""
         }
     };
+    req.api = "GET/logout";
 
     try {
         token = jwt.sign(
             {
-                "iss": jwtData.iss,
-                "idx": jwtData.idx,
-                "name": jwtData.name
+                "iss": req.iss,
+                "idx": req.idx,
+                "name": req.name
             },
             process.env.TOKEN_SECRET_KEY,
             {
@@ -116,7 +120,6 @@ router.get("/logout", checkLogin, (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), "GET/logout", req.body, result)
         res.send(result);
     }
 });
@@ -180,21 +183,21 @@ router.post("/users-pw", checkValidity, async (req, res) => {
 });
 
 //알림 불러오기
-router.get("/notifs", checkLogin, async (req, res) => {
+router.get("/notifs", checkAuth, async (req, res) => {
     const { token } = req.headers;
-    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
     const result = {
         "success": false,
         "message": "",
         "data": null
     }
+    req.api = "GET/notifs";
 
     try {
         const db = await connectMongoDB();
 
         const notifData = await db.collection("notif").find(
             {
-                "receiver_idx": jwtData.idx
+                "receiver_idx": req.idx
             }
         ).sort({ "created_at": -1 }).toArray();
 
@@ -204,18 +207,18 @@ router.get("/notifs", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), "GET/logout", req.body, result)
         res.send(result);
     }
 })
 
 //관리자 권한으로 logging 보기
-router.get("/logging", checkLogin("admin"), async (req, res) => {
+router.get("/logging", checkAuth("admin"), async (req, res) => {
     const result = {
         "success": false,
         "message": "",
         "data": null
     }
+    req.api = "GET/logging";
 
     try {
         const db = await connectMongoDB();

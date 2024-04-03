@@ -1,28 +1,23 @@
 const router = require("express").Router();
-const jwt = require("jsonwebtoken");
-const requestIp = require("request-ip");
 
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
 const connectMongoDB = require("../../database/connect/mongodb");
 
-const checkLogin = require("../middlewares/checkLogin");
+const checkAuth = require("../middlewares/checkAuth");
+const checkValidity = require("../middlewares/checkAuth");
 
 const permission = require("../modules/permission");
 const getCurrentDate = require("../modules/getCurrentDate");
 const updateComment = require("../modules/updateComment");
-const logJwt = require("../modules/logJwt");
 
 //댓글 작성
-router.post("/", checkLogin, async (req, res) => {
-    const { token } = req.headers;
-    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
-
+router.post("/", checkAuth, checkValidity, async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
     const contents = req.body.contents;
     const commentIdxList = req.body.commentIdxList;
 
-    const userIdx = jwtData.idx;
+    const userIdx = req.idx;
     const insertObj = {
         "user_idx": userIdx,
         "contents": contents,
@@ -34,6 +29,7 @@ router.post("/", checkLogin, async (req, res) => {
         "success": false,
         "message": ""
     };
+    req.api = "POST/comments";
 
     try {
         const db = await connectMongoDB();
@@ -69,7 +65,7 @@ router.post("/", checkLogin, async (req, res) => {
             await db.collection("notif").insertOne(
                 {
                     "post_idx": postIdx,
-                    "sender_name": jwtData.name,
+                    "sender_name": req.name,
                     "receiver_idx": posterIdx,
                     "type": "newComment",
                     "created_at": getCurrentDate()
@@ -82,26 +78,23 @@ router.post("/", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), "POST/comments", req.body, result)
         res.send(result);
     }
 })
 
 //댓글 수정
-router.put("/:idx", checkLogin, async (req, res) => {
-    const { token } = req.headers;
-    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
-
+router.put("/:idx", checkAuth, checkValidity, async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
     const contents = req.body.contents;
     const commentIdxList = req.body.commentIdxList;
 
     const commentIdx = parseInt(req.params.idx);
-    const userIdx = jwtData.idx;
+    const userIdx = req.idx;
     const result = {
         "success": false,
         "message": ""
     };
+    req.api = `PUT/comments/${commentIdx}`;
 
     try {
         const db = await connectMongoDB();
@@ -129,26 +122,23 @@ router.put("/:idx", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), `PUT/comments/${commentIdx}`, req.body, result)
         res.send(result);
     }
 })
 
 //댓글 삭제
-router.delete("/:idx", checkLogin, async (req, res) => {
-    const { token } = req.headers;
-    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
-
+router.delete("/:idx", checkAuth, async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
     const commentIdxList = req.body.commentIdxList;
 
-    const userIdx = jwtData.idx;
+    const userIdx = req.idx;
     const commentIdx = parseInt(req.params.idx);
     const deleteMessage = "삭제된 댓글입니다.";
     const result = {
         "success": false,
         "message": ""
     };
+    req.api = `DELETE/comments/${commentIdx}`;
 
     try {
         const db = await connectMongoDB();
@@ -176,25 +166,22 @@ router.delete("/:idx", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), `DELETE/comments/${commentIdx}`, req.body, result)
         res.send(result);
     }
 })
 
 //특정 댓글 좋아요
-router.post("/like", checkLogin, async (req, res) => {
-    const { token } = req.headers;
-    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
-
+router.post("/like", checkAuth, async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
     const commentIdxList = req.body.commentIdxList; //수정하려는 idx도 list에 있다는 전제
 
-    const userIdx = jwtData.idx;
+    const userIdx = req.idx;
     const commentIdx = commentIdxList[commentIdxList.length - 1];
     const result = {
         "success": false,
         "message": ""
     };
+    req.api = "POST/comments/like";
 
     try {
         const db = await connectMongoDB();
@@ -237,25 +224,22 @@ router.post("/like", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), "POST/comments/like", req.body, result)
         res.send(result);
     }
 })
 
 //좋아요 취소 //pathparmeter??
-router.delete("/:idx/like", checkLogin, async (req, res) => {
-    const { token } = req.headers;
-    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
-
+router.delete("/:idx/like", checkAuth, async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
     const commentIdxList = req.body.commentIdxList; //삭제하려는 idx는 포함하지 않는다는 전제
 
-    const userIdx = jwtData.idx;
+    const userIdx = req.idx;
     const commentIdx = parseInt(req.params.idx);
     const result = {
         "success": false,
         "message": ""
     };
+    req.api = `DELETE/${commentIdx}/like`;
 
     try {
         const db = await connectMongoDB();
@@ -299,7 +283,6 @@ router.delete("/:idx/like", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), `DELETE/comments/${commentIdx}/like`, req.body, result)
         res.send(result);
     }
 })

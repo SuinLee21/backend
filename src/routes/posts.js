@@ -1,27 +1,24 @@
 const router = require("express").Router();
-const jwt = require("jsonwebtoken");
-const requestIp = require('request-ip');
 
 const psql = require("../../database/connect/postgre");
 // const mariadb = require("../../database/connect/mariadb");
 const connectMongoDB = require("../../database/connect/mongodb");
 
-const checkLogin = require("../middlewares/checkLogin");
+const checkAuth = require("../middlewares/checkAuth");
+const checkValidity = require("../middlewares/checkValidity");
 
 const permission = require("../modules/permission");
 const getCurrentDate = require("../modules/getCurrentDate");
-const logJwt = require("../modules/logJwt");
 
 //게시글 작성
-router.post("/", checkLogin, async (req, res) => {
+router.post("/", checkAuth, checkValidity, async (req, res) => {
     const { title, contents, categoryIdx } = req.body;
-    const { token } = req.headers;
-    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
-    const userIdx = jwtData.idx;
+    const userIdx = req.idx;
     const result = {
         "success": false,
         "message": ""
     };
+    req.api = "POST/posts";
 
     try {
         await psql.query(`
@@ -55,7 +52,7 @@ router.post("/", checkLogin, async (req, res) => {
             await db.collection("notif").insertOne(
                 {
                     "post_idx": postCount,
-                    "sender_name": jwtData.name,
+                    "sender_name": req.name,
                     "receiver_idx": userIdxList.rows[i].idx,
                     "type": "newPost",
                     "created_at": getCurrentDate()
@@ -68,19 +65,18 @@ router.post("/", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), "POST/posts", req.body, result)
         res.send(result);
     }
 })
 
 //모든 게시글 읽기
-router.get('/', checkLogin, async (req, res) => {
-    const { token } = req.headers;
+router.get('/', checkAuth, async (req, res) => {
     const result = {
         "success": false,
         "message": "",
         "data": null
     }
+    req.api = "GET/posts";
 
     try {
         const postData = await psql.query(`
@@ -97,20 +93,19 @@ router.get('/', checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), "GET/posts", req.body, result);
         res.send(result);
     }
 })
 
 //특정 게시글 읽기
-router.get("/:idx", checkLogin, async (req, res) => {
-    const { token } = req.headers;
+router.get("/:idx", checkAuth, async (req, res) => {
     const postIdx = req.params.idx;
     const result = {
         "success": false,
         "message": "",
         "data": null
     };
+    req.api = `GET/posts/${postIdx}`;
 
     try {
         const postData = await psql.query(`
@@ -128,20 +123,19 @@ router.get("/:idx", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), `GET/posts/${postIdx}`, req.body, result)
         res.send(result);
     }
 })
 
 //특정 카테고리 게시글 전체 읽기
-router.get("/category/:idx", checkLogin, async (req, res) => {
+router.get("/category/:idx", checkAuth, async (req, res) => {
     const categoryIdx = req.params.idx;
-    const { token } = req.headers;
     const result = {
         "success": false,
         "message": "",
         "data": null
     };
+    req.api = `GET/posts/category/${categoryIdx}`;
 
     try {
         const postData = await psql.query(`
@@ -159,20 +153,19 @@ router.get("/category/:idx", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), `GET/posts/category/${categoryIdx}`, req.body, result)
         res.send(result);
     }
 })
 
 //특정 게시글 댓글 읽기
-router.get('/:idx/comments', checkLogin, async (req, res) => {
+router.get('/:idx/comments', checkAuth, async (req, res) => {
     const postIdx = parseInt(req.params.idx);
-    const { token } = req.headers;
     const result = {
         "success": false,
         "message": "",
         "data": null
     }
+    req.api = `GET/${postIdx}/comments`;
 
     try {
         const db = await connectMongoDB();
@@ -189,22 +182,20 @@ router.get('/:idx/comments', checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), `GET/posts/${postIdx}/comments`, req.body, result)
         res.send(result);
     }
 })
 
 //게시글 수정
-router.put("/:idx", checkLogin, async (req, res) => {
+router.put("/:idx", checkAuth, checkValidity, async (req, res) => {
     const { title, contents, categoryIdx } = req.body;
-    const { token } = req.headers;
-    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
-    const userIdx = jwtData.idx;
+    const userIdx = req.idx;
     const postIdx = req.params.idx;
     const result = {
         "success": false,
         "message": ""
     };
+    req.api = `PUT/posts/${postIdx}`;
 
     try {
         await psql.query(`
@@ -218,21 +209,19 @@ router.put("/:idx", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), `PUT/posts/${postIdx}`, req.body, result)
         res.send(result);
     }
 })
 
 //게시글 삭제
-router.delete("/:idx", checkLogin, async (req, res) => {
-    const { token } = req.headers;
-    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
-    const userIdx = jwtData.idx;
+router.delete("/:idx", checkAuth, async (req, res) => {
+    const userIdx = req.idx;
     const postIdx = parseInt(req.params.idx);
     const result = {
         "success": false,
         "message": ""
     };
+    req.api = `DELETE/posts/${postIdx}`;
 
     try {
         const db = await connectMongoDB();
@@ -252,21 +241,19 @@ router.delete("/:idx", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), `DELETE/posts/${postIdx}`, req.body, result)
         res.send(result);
     }
 })
 
 //특정 게시글 좋아요
-router.post("/like", checkLogin, async (req, res) => {
+router.post("/like", checkAuth, async (req, res) => {
     const postIdx = parseInt(req.body.postIdx);
-    const { token } = req.headers;
-    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
-    const userIdx = jwtData.idx;
+    const userIdx = req.idx;
     const result = {
         "success": false,
         "message": ""
     };
+    req.api = "POST/posts/like";
 
     try {
         const db = await connectMongoDB();
@@ -305,7 +292,7 @@ router.post("/like", checkLogin, async (req, res) => {
             {
                 "post_idx": postIdx,
                 "sender_idx": userIdx,
-                "sender_name": jwtData.name,
+                "sender_name": req.name,
                 "receiver_idx": posterIdx.rows[0].user_idx,
                 "type": "postLike",
                 "created_at": getCurrentDate()
@@ -317,21 +304,19 @@ router.post("/like", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), "POST/posts/like", req.body, result)
         res.send(result);
     }
 })
 
 //좋아요 취소
-router.delete("/:idx/like", checkLogin, async (req, res) => {
-    const { token } = req.headers;
-    const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
-    const userIdx = jwtData.idx;
+router.delete("/:idx/like", checkAuth, async (req, res) => {
+    const userIdx = req.idx;
     const postIdx = parseInt(req.params.idx);
     const result = {
         "success": false,
         "message": ""
     };
+    req.api = `DELETE/${postIdx}/like`;
 
     try {
         const db = await connectMongoDB();
@@ -362,7 +347,6 @@ router.delete("/:idx/like", checkLogin, async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
-        logJwt(token, requestIp.getClientIp(req), `DELETE/posts/${postIdx}/like`, req.body, result)
         res.send(result);
     }
 })

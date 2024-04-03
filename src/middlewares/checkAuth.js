@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-const checkLogin = (type = null) => {
+const checkAuth = (type = null) => {
     return (req, res, next) => {
         const { token } = req.headers;
         const result = {
@@ -10,6 +10,10 @@ const checkLogin = (type = null) => {
 
         try {
             const jwtData = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
+
+            req.iss = jwtData.iss;
+            req.idx = jwtData.idx;
+            req.name = jwtData.name;
 
             if (type === "admin" && jwtData.admin !== true) {
                 throw new Error('관리자만이 접근할 수 있습니다.');
@@ -27,9 +31,9 @@ const checkLogin = (type = null) => {
                 result.message = err.message;
             }
 
-            res.send(result);
+            res.status(401).send(result);
         }
     }
 }
 
-module.exports = checkLogin
+module.exports = checkAuth
