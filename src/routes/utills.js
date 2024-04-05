@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
+const redis = require("redis").createClient();
 
 const psql = require("../../database/connect/postgre");
 const mariadb = require("../../database/connect/mariadb");
@@ -17,7 +18,9 @@ router.post("/login", checkValidity, async (req, res) => {
         "success": false,
         "message": "",
         "data": {
-            "token": ""
+            "token": "",
+            "todayLoginCount": 0,
+            "recentUser": null
         }
     };
     let isAdmin = false;
@@ -49,19 +52,49 @@ router.post("/login", checkValidity, async (req, res) => {
             {
                 "expiresIn": "25m"
             }
-        )
+        );
 
         req.iss = userId;
         req.idx = userIdx;
         req.name = userName;
 
+        //redis
+        await redis.connect();
+
+        // await redis.sAdd("totalLoginHistory", userId);
+        // const ss = await redis.sMembers("test");
+        // await redis.del("test");
+
+        await redis.zAdd('todayLoginHistory', { score: Date.now(), value: userId });
+        // await redis.zRemRangeByLex("todayLoginHistory", "-", "+");
+
+        const todayLoginHistory = await redis.zRange('todayLoginHistory', 0, -1);
+        console.log(todayLoginHistory);
+        let index = todayLoginHistory.length - 1;
+        let recentUser = [];
+        let count = 5;
+
+        while (index != -1) {
+            if (count == 0) {
+                break;
+            }
+            recentUser.push(todayLoginHistory[index]);
+
+            index--;
+            count--;
+        }
+
         result.success = true;
         result.message = "로그인 성공.";
         result.data.token = token;
+        result.data.todayLoginCount = todayLoginHistory.length;
+        result.data.recentUser = recentUser;
     } catch (err) {
-        console.log(err.message);
+        // console.log(err.message);
+        console.log(err);
         result.message = err.message;
     } finally {
+        redis.disconnect();
         res.send(result);
     }
 });

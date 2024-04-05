@@ -37,7 +37,6 @@ const checkValidity = (req, res, next) => {
     }
     if (title) {
         title = title.replace(/\n|\r/g, '');
-        console.log(title);
     }
     if (contents) {
         contents = contents.replace(/\n|\r/g, '');

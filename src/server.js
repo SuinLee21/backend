@@ -3,6 +3,8 @@ const session = require('express-session');
 const interceptor = require('express-interceptor');
 const requestIp = require('request-ip');
 const jwt = require('jsonwebtoken');
+const redis = require("redis").createClient();
+const schedule = require("node-schedule");
 
 const usersApi = require("./routes/users");
 const postsApi = require("./routes/posts");
@@ -49,6 +51,26 @@ app.use("/users", usersApi);
 app.use("/posts", postsApi);
 app.use("/comments", commentsApi);
 app.use("/", utillsApi);
+
+schedule.scheduleJob('0 0 0 * * *', async () => {
+    await redis.connect();
+
+    const todayLoginHistory = await redis.zRange('todayLoginHistory', 0, -1);
+
+    for (let i = 0; i < todayLoginHistory.length; i++) {
+        await redis.sAdd("totalLoginHistory", todayLoginHistory[i]);
+    }
+    await redis.zRemRangeByLex("todayLoginHistory", "-", "+");
+
+    redis.save((err, reply) => {
+        if (err) {
+            console.error('Error:', err);
+        } else {
+            console.log('Save reply:', reply);
+        }
+    });
+    redis.disconnect();
+})
 
 app.listen(port, () => {
     console.log(`${port}번에서 HTTP Web Server 실행`);
