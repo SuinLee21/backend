@@ -3,8 +3,8 @@ const session = require('express-session');
 const interceptor = require('express-interceptor');
 const requestIp = require('request-ip');
 const jwt = require('jsonwebtoken');
-const redis = require("redis").createClient();
 const schedule = require("node-schedule");
+const redis = require("redis").createClient();
 
 const usersApi = require("./routes/users");
 const postsApi = require("./routes/posts");
@@ -53,24 +53,21 @@ app.use("/comments", commentsApi);
 app.use("/", utillsApi);
 
 schedule.scheduleJob('0 0 0 * * *', async () => {
-    await redis.connect();
+    try {
+        await redis.connect();
 
-    const todayLoginHistory = await redis.zRange('todayLoginHistory', 0, -1);
+        const todayLoginHistory = await redis.zRange('todayLoginHistory', 0, -1);
 
-    for (let i = 0; i < todayLoginHistory.length; i++) {
-        await redis.sAdd("totalLoginHistory", todayLoginHistory[i]);
-    }
-    await redis.zRemRangeByLex("todayLoginHistory", "-", "+");
-
-    redis.save((err, reply) => {
-        if (err) {
-            console.error('Error:', err);
-        } else {
-            console.log('Save reply:', reply);
+        for (let i = 0; i < todayLoginHistory.length; i++) {
+            await redis.sAdd("totalLoginHistory", todayLoginHistory[i]);
         }
-    });
-    redis.disconnect();
-})
+        await redis.zRemRangeByLex("todayLoginHistory", "-", "+");
+    } catch (err) {
+        console.log(err);
+    } finally {
+        redis.disconnect();
+    }
+});
 
 app.listen(port, () => {
     console.log(`${port}번에서 HTTP Web Server 실행`);

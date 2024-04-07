@@ -61,15 +61,9 @@ router.post("/login", checkValidity, async (req, res) => {
         //redis
         await redis.connect();
 
-        // await redis.sAdd("totalLoginHistory", userId);
-        // const ss = await redis.sMembers("test");
-        // await redis.del("test");
-
         await redis.zAdd('todayLoginHistory', { score: Date.now(), value: userId });
-        // await redis.zRemRangeByLex("todayLoginHistory", "-", "+");
-
         const todayLoginHistory = await redis.zRange('todayLoginHistory', 0, -1);
-        console.log(todayLoginHistory);
+
         let index = todayLoginHistory.length - 1;
         let recentUser = [];
         let count = 5;
@@ -95,6 +89,7 @@ router.post("/login", checkValidity, async (req, res) => {
         result.message = err.message;
     } finally {
         redis.disconnect();
+        // redis.quit();
         res.send(result);
     }
 });
