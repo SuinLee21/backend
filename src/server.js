@@ -56,11 +56,13 @@ schedule.scheduleJob('0 0 0 * * *', async () => {
     try {
         await redis.connect();
 
-        const todayLoginHistory = await redis.zRange('todayLoginHistory', 0, -1);
+        const loginCount = await redis.hGetAll('todayLoginCount');
 
-        for (let i = 0; i < todayLoginHistory.length; i++) {
-            await redis.sAdd("totalLoginHistory", todayLoginHistory[i]);
-        }
+        await pg.query(`
+            UPDATE backend.login_count
+            SET count=count+${loginCount}
+        `)
+
         await redis.zRemRangeByLex("todayLoginHistory", "-", "+");
     } catch (err) {
         console.log(err);

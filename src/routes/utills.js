@@ -19,7 +19,6 @@ router.post("/login", checkValidity, async (req, res) => {
         "message": "",
         "data": {
             "token": "",
-            "todayLoginCount": 0,
             "recentUser": null
         }
     };
@@ -61,27 +60,23 @@ router.post("/login", checkValidity, async (req, res) => {
         //redis
         await redis.connect();
 
-        await redis.zAdd('todayLoginHistory', { score: Date.now(), value: userId });
-        const todayLoginHistory = await redis.zRange('todayLoginHistory', 0, -1);
+        await redis.zAdd('recentUser', { score: Date.now(), value: userId });
+        const recentUser = await redis.zRange('recentUser', 0, -1);
 
-        let index = todayLoginHistory.length - 1;
-        let recentUser = [];
-        let count = 5;
+        const todayLoginCount = await redis.hGet('todayLoginCount', 'count');
+        if (todayLoginCount) {
+            await redis.hSet('todayLoginCount', 'count', parseInt(todayLoginCount) + 1);
+        } else {
+            await redis.hSet('todayLoginCount', 'count', 1);
+        }
 
-        while (index != -1) {
-            if (count == 0) {
-                break;
-            }
-            recentUser.push(todayLoginHistory[index]);
-
-            index--;
-            count--;
+        if (recentUser.length > 5) {
+            recentUser.shift();
         }
 
         result.success = true;
         result.message = "로그인 성공.";
         result.data.token = token;
-        result.data.todayLoginCount = todayLoginHistory.length;
         result.data.recentUser = recentUser;
     } catch (err) {
         // console.log(err.message);
@@ -89,7 +84,6 @@ router.post("/login", checkValidity, async (req, res) => {
         result.message = err.message;
     } finally {
         redis.disconnect();
-        // redis.quit();
         res.send(result);
     }
 });
@@ -255,6 +249,29 @@ router.get("/logging", checkAuth("admin"), async (req, res) => {
         result.success = true;
         result.message = "정상적으로 로깅들을 불러왔습니다.";
         result.data = loggingData;
+    } catch (err) {
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+})
+
+router.get("/login-count", checkAuth(), async (req, res) => {
+    const result = {
+        "success": false,
+        "message": "",
+        "data": {
+            "loginCount": 0
+        }
+    }
+    req.api = "GET/login-count";
+
+    try {
+        const loginCount = await redis.hGetAll('todayLoginCount');
+
+        result.success = true;
+        result.message = "정상적으로 데이터를 불러왔습니다.";
+        result.data.loginCount = parseInt(loginCount);
     } catch (err) {
         result.message = err.message;
     } finally {
