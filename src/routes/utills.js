@@ -267,7 +267,9 @@ router.get("/login-count", checkAuth(), async (req, res) => {
     req.api = "GET/login-count";
 
     try {
-        const loginCount = await redis.hGetAll('todayLoginCount');
+        await redis.connect();
+
+        const loginCount = await redis.hGet('todayLoginCount', 'count');
 
         result.success = true;
         result.message = "정상적으로 데이터를 불러왔습니다.";
@@ -275,6 +277,7 @@ router.get("/login-count", checkAuth(), async (req, res) => {
     } catch (err) {
         result.message = err.message;
     } finally {
+        redis.disconnect();
         res.send(result);
     }
 })

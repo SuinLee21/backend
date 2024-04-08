@@ -1,24 +1,21 @@
 const express = require("express");
 const session = require('express-session');
-const interceptor = require('express-interceptor');
-const requestIp = require('request-ip');
-const jwt = require('jsonwebtoken');
-const schedule = require("node-schedule");
-const redis = require("redis").createClient();
+
+const interceptor = require("./middlewares/interceptor");
+
+const schedule = require("./modules/schedule");
 
 const usersApi = require("./routes/users");
 const postsApi = require("./routes/posts");
 const commentsApi = require("./routes/comments");
 const utillsApi = require("./routes/utills");
 
-const logging = require("./modules/logging");
-
 // const mariadb = require("../database/connect/mariadb");
 // mariadb.connect();
 
 require('dotenv').config();
-const pg = require("../database/connect/postgre");
-pg.connect(err => {
+const psql = require("../database/connect/postgre");
+psql.connect(err => {
     if (err) {
         console.log(err);
     }
@@ -36,40 +33,14 @@ app.use(session({
     checkPeriod: maxAge
 }));
 
-app.use(interceptor((req, res) => ({
-    isInterceptable: () => true,
-    intercept: (body, send) => {
-        if (req.idx) {
-            console.log('logging');
-            logging(req.iss, requestIp.getClientIp(req), req.api, req.body, body);
-        }
-        send(body);
-    }
-})));
+app.use(interceptor);
 
 app.use("/users", usersApi);
 app.use("/posts", postsApi);
 app.use("/comments", commentsApi);
 app.use("/", utillsApi);
 
-schedule.scheduleJob('0 0 0 * * *', async () => {
-    try {
-        await redis.connect();
-
-        const loginCount = await redis.hGetAll('todayLoginCount');
-
-        await pg.query(`
-            UPDATE backend.login_count
-            SET count=count+${loginCount}
-        `)
-
-        await redis.zRemRangeByLex("todayLoginHistory", "-", "+");
-    } catch (err) {
-        console.log(err);
-    } finally {
-        redis.disconnect();
-    }
-});
+schedule;
 
 app.listen(port, () => {
     console.log(`${port}번에서 HTTP Web Server 실행`);
