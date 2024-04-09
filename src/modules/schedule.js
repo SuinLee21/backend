@@ -1,7 +1,8 @@
 const schedule = require("node-schedule");
 const redis = require("redis").createClient();
+const psql = require("../../database/connect/postgre");
 
-const scheduler = schedule.scheduleJob('0 * * * * *', async () => {
+const scheduler = schedule.scheduleJob('0 0 0 * * *', async () => {
     try {
         await redis.connect();
 
