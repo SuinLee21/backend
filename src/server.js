@@ -50,28 +50,33 @@ const upload = multer({
     storage: multer.diskStorage({
         destination(req, file, done) {
             console.log(path.dirname(file.originalname));
-            console.log(path.basename(file.originalname));
+            console.log(path.basename(file.originalname, path.extname(file.originalname)));
             console.log(path.extname(file.originalname));
-            done(null, "public");
+            done(null, "public/img");
         },
         filename(req, file, done) {
-            done(null, 'sadDog');
+            const userId = req.body.userId || req.iss;
+
+            done(null, `${userId}${path.extname(file.originalname)}`);
         }
     }),
     fileFilter(req, file, done) {
-        if (fs.existsSync("public/dog2.jpg")) {
-            console.log('exists');
-            fs.unlinkSync("public/dog2.jpg");
-            return done(('이미 존재하는 파일입니다.'), false);
-        } else {
-            console.log('not');
-        }
-
         const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
 
         if (!allowedTypes.includes(file.mimetype)) {
-            const error = new Error("허용되지 않는 파일 형식입니다");
-            return done(error, false);
+            return done('허용되지 않는 확장자입니다.', false);
+        }
+
+        if (req.iss) { // 회원가입일 때는 제외, 회원정보 수정일 때는 실행시키기 위해서
+            const imgPath = `public/img/${req.iss}`;
+
+            if (fs.existsSync(`${imgPath}.jpeg`)) {
+                fs.unlinkSync(`${imgPath}.jpeg`);
+            } else if (fs.existsSync(`${imgPath}.jpg`)) {
+                fs.unlinkSync(`${imgPath}.jpg`);
+            } else if (fs.existsSync(`${imgPath}.png`)) {
+                fs.unlinkSync(`${imgPath}.png`);
+            }
         }
 
         done(null, true);

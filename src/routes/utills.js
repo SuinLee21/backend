@@ -97,6 +97,15 @@ router.post("/signup", checkValidity, async (req, res) => {
     };
 
     try {
+        const userIdData = await psql.query(`
+            SELECT id FROM backend.user
+            WHERE id=$1
+        `, [userId]);
+
+        if (userIdData.rows.length === 0) {
+            throw new Error('이미 존재하는 아이디입니다.');
+        }
+
         await psql.query(`
             INSERT INTO backend.user(id, pw, name, phone_num, is_admin)
             VALUES($1, $2, $3, $4, $5)
