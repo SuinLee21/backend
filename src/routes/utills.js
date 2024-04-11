@@ -8,6 +8,9 @@ const connectMongoDB = require("../../database/connect/mongodb");
 
 const checkAuth = require("../middlewares/checkAuth");
 const checkValidity = require("../middlewares/checkValidity");
+const uploadFile = require("../middlewares/uploadFile");
+const checkFile = require("../middlewares/checkFile");
+const idDuplicate = require("../middlewares/idDuplicate");
 
 const permission = require("../modules/permission");
 
@@ -89,31 +92,24 @@ router.post("/login", checkValidity, async (req, res) => {
 });
 
 //회원가입
-router.post("/signup", checkValidity, async (req, res) => {
+router.post("/signup", uploadFile, checkFile, checkValidity, idDuplicate, async (req, res) => {
     const { userId, userPw, userName, userPhoneNum, isAdmin } = req.body;
+    const imgPath = `http://43.203.13.92:8000/${req.imgPath}`;
     const result = {
         "success": false,
         "message": ""
     };
 
     try {
-        const userIdData = await psql.query(`
-            SELECT id FROM backend.user
-            WHERE id=$1
-        `, [userId]);
-
-        if (userIdData.rows.length === 0) {
-            throw new Error('이미 존재하는 아이디입니다.');
-        }
-
         await psql.query(`
-            INSERT INTO backend.user(id, pw, name, phone_num, is_admin)
-            VALUES($1, $2, $3, $4, $5)
-        `, [userId, userPw, userName, userPhoneNum, isAdmin]);
+            INSERT INTO backend.user(id, pw, name, phone_num, is_admin, img_path)
+            VALUES($1, $2, $3, $4, $5, $6)
+        `, [userId, userPw, userName, userPhoneNum, isAdmin, imgPath]);
 
         result.success = true;
         result.message = "정상적으로 가입되었습니다.";
     } catch (err) {
+        // console.log(err);
         result.message = err.message;
     } finally {
         res.send(result);

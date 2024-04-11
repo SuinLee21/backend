@@ -6,6 +6,7 @@ const checkValidity = (req, res, next) => {
 
     const { userId, userPw, userName, userPhoneNum } = Object.keys(req.body).length == 0 ? req.query : req.body;
     let { title, contents } = req.body;
+
     const result = {
         "success": false,
         "message": ""
