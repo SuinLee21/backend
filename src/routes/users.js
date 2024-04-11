@@ -6,6 +6,8 @@ const psql = require("../../database/connect/postgre");
 
 const checkAuth = require("../middlewares/checkAuth");
 const checkValidity = require("../middlewares/checkValidity");
+const uploadFile = require("../middlewares/uploadFile");
+const checkFile = require("../middlewares/checkFile");
 
 const permission = require("../modules/permission");
 
@@ -90,7 +92,8 @@ router.get("/:idx", checkAuth(), async (req, res) => {
 
     try {
         const userData = await psql.query(`
-            SELECT id, name, phone_num FROM backend.user
+            SELECT id, name, phone_num, img_path
+            FROM backend.user
             WHERE idx=$1
         `, [userIdx]);
 
@@ -109,8 +112,9 @@ router.get("/:idx", checkAuth(), async (req, res) => {
 });
 
 //특정 유저 정보 수정
-router.put("/", checkAuth(), checkValidity, async (req, res) => {
+router.put("/", checkAuth(), uploadFile, checkFile, checkValidity, async (req, res) => {
     const { userPw, userName, userPhoneNum } = req.body;
+    const imgPath = `http://43.203.13.92:8000/${req.imgPath}`;
     let { token } = req.headers;
     const result = {
         "success": false,
@@ -123,9 +127,9 @@ router.put("/", checkAuth(), checkValidity, async (req, res) => {
 
     try {
         await psql.query(`
-            UPDATE backend.user SET pw=$1, name=$2, phone_num=$3
+            UPDATE backend.user SET pw=$1, name=$2, phone_num=$3, img_path=$4
             WHERE idx=$4
-        `, [userPw, userName, userPhoneNum, req.idx]);
+        `, [userPw, userName, userPhoneNum, req.idx, imgPath]);
 
         token = jwt.sign(
             {

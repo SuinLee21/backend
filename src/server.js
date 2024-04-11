@@ -44,30 +44,6 @@ app.use("/", utillsApi);
 
 schedule;
 
-app.post('/upload', uploadFile, (req, res) => {
-    console.log(req.file);
-    console.log(req.body.userId);
-    res.send(true);
-});
-
-app.get('/test', (req, res) => {
-    try {
-        if (1) {
-            const error = new Error('에러에용');
-            error.name = 'eee';
-            error.tester = 'suin';
-            throw error;
-        }
-
-        res.send(true);
-    } catch (err) {
-        console.log(err.message);
-        console.log(err.name);
-        console.log(err.tester);
-        res.send(false);
-    }
-})
-
 app.listen(port, () => {
     console.log(`${port}번에서 HTTP Web Server 실행`);
 });
