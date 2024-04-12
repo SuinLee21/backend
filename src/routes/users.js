@@ -6,7 +6,8 @@ const psql = require("../../database/connect/postgre");
 
 const checkAuth = require("../middlewares/checkAuth");
 const checkValidity = require("../middlewares/checkValidity");
-const uploadFile = require("../middlewares/uploadFile");
+const uploadFileToPublic = require("../middlewares/uploadFileToPublic");
+const uploadFileToS3 = require("../middlewares/uploadFileToS3");
 const checkFile = require("../middlewares/checkFile");
 
 const permission = require("../modules/permission");
@@ -112,9 +113,10 @@ router.get("/:idx", checkAuth(), async (req, res) => {
 });
 
 //특정 유저 정보 수정
-router.put("/", checkAuth(), uploadFile, checkFile, checkValidity, async (req, res) => {
+router.put("/", checkAuth(), uploadFileToPublic, checkFile, checkValidity, async (req, res) => {
     const { userPw, userName, userPhoneNum } = req.body;
     const imgPath = `http://43.203.13.92:8000/${req.imgPath}`;
+    // const imgPath = req.imgPath;
     let { token } = req.headers;
     const result = {
         "success": false,

@@ -2,7 +2,6 @@ const express = require("express");
 const session = require('express-session');
 
 const interceptor = require("./middlewares/interceptor");
-const uploadFile = require("./middlewares/uploadFile");
 
 const schedule = require("./modules/schedule");
 

@@ -20,9 +20,9 @@ const idDuplicate = async (req, res, next) => {
 
         next();
     } catch (err) {
-        if (err.message === '이미 존재하는 아이디입니다.') {
-            fs.unlinkSync(`public/${req.imgPath}`);
-        }
+        // if (err.message === '이미 존재하는 아이디입니다.') {
+        //     fs.unlinkSync(`public/${req.imgPath}`);
+        // }
         console.log(err);
         result.message = err.message;
         res.send(result);

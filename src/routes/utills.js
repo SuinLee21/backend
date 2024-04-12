@@ -8,7 +8,8 @@ const connectMongoDB = require("../../database/connect/mongodb");
 
 const checkAuth = require("../middlewares/checkAuth");
 const checkValidity = require("../middlewares/checkValidity");
-const uploadFile = require("../middlewares/uploadFile");
+const uploadFileToPublic = require("../middlewares/uploadFileToPublic");
+const uploadFileToS3 = require("../middlewares/uploadFileToS3");
 const checkFile = require("../middlewares/checkFile");
 const idDuplicate = require("../middlewares/idDuplicate");
 
@@ -92,9 +93,10 @@ router.post("/login", checkValidity, async (req, res) => {
 });
 
 //회원가입
-router.post("/signup", uploadFile, checkFile, checkValidity, idDuplicate, async (req, res) => {
+router.post("/signup", uploadFileToS3, checkFile, checkValidity, idDuplicate, async (req, res) => {
     const { userId, userPw, userName, userPhoneNum, isAdmin } = req.body;
-    const imgPath = `http://43.203.13.92:8000/${req.imgPath}`;
+    // const imgPath = `http://43.203.13.92:8000/${req.imgPath}`;
+    const imgPath = req.imgPath;
     const result = {
         "success": false,
         "message": ""

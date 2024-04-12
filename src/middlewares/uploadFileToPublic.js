@@ -1,6 +1,7 @@
 const path = require("path");
 const multer = require("multer");
-const fs = require("fs");
+
+const checkFileType = require("../modules/checkFileType");
 
 const upload = multer({
     storage: multer.diskStorage({
@@ -15,11 +16,7 @@ const upload = multer({
         }
     }),
     fileFilter(req, file, done) {
-        const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-
-        if (!allowedTypes.includes(file.mimetype)) {
-            return done('허용되지 않는 확장자입니다.', false);
-        }
+        checkFileType(file.mimetype);
 
         done(null, true);
     }
