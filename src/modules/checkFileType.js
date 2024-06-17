@@ -5,3 +5,5 @@ const checkFileType = (file) => {
         return done('허용되지 않는 확장자입니다.', false);
     }
 }
+
+module.exports = checkFileType;

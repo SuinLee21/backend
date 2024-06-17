@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kakao Auth</title>
+</head>
+
+<body>
+    <button id="kakao-login-btn">Login with Kakao</button>
+    <div id="response"></div>
+    <button>
+        <a href="/oauth/kakao">click me!</a>
+    </button>
+</body>
+
+</html>
+<script>
+    document
+        .getElementById("kakao-login-btn")
+        .addEventListener("click", function () {
+            // 서버에 GET 요청을 보내는 함수
+            fetchKakaoAuth();
+        });
+
+    function fetchKakaoAuth() {
+        // 서버 주소와 엔드포인트 설정
+        const serverUrl = "http://43.203.13.92:8000/oauth/kakao";
+
+        // 서버에 GET 요청 보내기
+        fetch(serverUrl)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok " + response.statusText);
+                }
+                return response.json(); // JSON 형태로 변환
+            })
+            .then((data) => {
+                console.log("Success:", data);
+                document.getElementById("response").innerText = JSON.stringify(
+                    data,
+                    null,
+                    2
+                );
+            })
+            .catch((error) => {
+                console.error("There was a problem with your fetch operation:", error);
+                document.getElementById("response").innerText = "Error: " + error;
+            });
+    }
+</script>

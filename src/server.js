@@ -9,6 +9,9 @@ const usersApi = require("./routes/users");
 const postsApi = require("./routes/posts");
 const commentsApi = require("./routes/comments");
 const utillsApi = require("./routes/utills");
+const authApi = require("./routes/auth")
+const passport = require("passport");
+require('../src/passport/kakaoStrategy')();
 
 // const mariadb = require("../database/connect/mariadb");
 // mariadb.connect();
@@ -25,6 +28,7 @@ const app = express();
 const port = process.env.HTTP_PORT;
 const maxAge = 30 * 60 * 1000;
 
+
 app.use(express.json());
 app.use(express.static('public'));
 app.use(session({
@@ -33,13 +37,19 @@ app.use(session({
     saveUninitialized: false,
     checkPeriod: maxAge
 }));
+app.use(passport.initialize());
+app.use(passport.session());
 
+app.get('/', (req, res) => {
+    res.sendFile('/index.html')
+})
 app.use(interceptor);
 
 app.use("/users", usersApi);
 app.use("/posts", postsApi);
 app.use("/comments", commentsApi);
 app.use("/", utillsApi);
+app.use("/oauth", authApi);
 
 schedule;
 

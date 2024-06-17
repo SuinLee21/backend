@@ -113,10 +113,10 @@ router.get("/:idx", checkAuth(), async (req, res) => {
 });
 
 //특정 유저 정보 수정
-router.put("/", checkAuth(), uploadFileToPublic, checkFile, checkValidity, async (req, res) => {
+router.put("/", checkAuth(), uploadFileToS3, checkFile, checkValidity, async (req, res) => {
     const { userPw, userName, userPhoneNum } = req.body;
-    const imgPath = `http://43.203.13.92:8000/${req.imgPath}`;
-    // const imgPath = req.imgPath;
+    // const imgPath = `http://43.203.13.92:8000/${req.imgPath}`;
+    const imgPath = req.imgPath;
     let { token } = req.headers;
     const result = {
         "success": false,
